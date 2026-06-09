@@ -72,7 +72,8 @@
 - グループ紹介シートの列は `group` / `number` / `name` / `leader` / `memberCount` / `manager` / `visible` を使えます
 - 活動報告シートの列は `date` / `category` / `title` / `text` / `place` / `keywords` / `imageUrl` / `imageAlt` / `visible` を使えます
 - 活動報告シートでは補助列として `driveShareUrl` / `imageFileId` / `previewImage` を追加しても大丈夫です。サイト側は余分な列を無視します
-- 画像はシートに直接挿入せず、Drive の共有リンクを `driveShareUrl` に貼る運用がおすすめです。テンプレートの式で `imageFileId` と `imageUrl` が自動生成されます
-- `previewImage` には `=IMAGE(imageUrlセル)` を入れて、シート内だけでプレビューできます
+- 画像はシートに直接挿入せず、Drive の共有リンクを `driveShareUrl` に貼る運用がおすすめです。テンプレートの式で `imageFileId` と `imageUrl` を自動生成します。`imageUrl` は `https://lh3.googleusercontent.com/d/FILE_ID` 形式です
+- Drive 側は「リンクを知っている全員が閲覧可」にしてください。`imageUrl` には Markdown 形式の `[...](...)` ではなく、画像URLそのものを入れてください
+- `previewImage` は `imageUrl` ではなく `imageFileId` から直接生成すると安定します。テンプレートでは `=IMAGE("https://lh3.googleusercontent.com/d/"&imageFileIdセル)` を使っています
 - `reports-sheet-template.csv` は 2行目に説明用の補助行が入っています。不要なら削除して構いません
 - ボタン文言は日付で自動切替します。`linkLabel` 列は不要です
