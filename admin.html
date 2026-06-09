@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>イベント運用ガイド | 西成住之江支部</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --primary: #1a3a5c;
+    --accent: #c8973a;
+    --light: #f8f6f2;
+    --white: #ffffff;
+    --gray: #666666;
+    --border: #e0dbd2;
+    --ok-bg: #ebf6ee;
+    --ok-text: #25623a;
+    --warn-bg: #fff4e5;
+    --warn-text: #915b00;
+  }
+  body {
+    font-family: "Hiragino Sans", "Noto Sans JP", sans-serif;
+    background: var(--light);
+    color: #333333;
+    line-height: 1.7;
+  }
+  header {
+    background: var(--primary);
+    color: var(--white);
+    padding: 32px 20px;
+  }
+  header h1 {
+    font-size: 26px;
+    margin-bottom: 8px;
+  }
+  header p {
+    font-size: 14px;
+    opacity: 0.85;
+  }
+  main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 24px 20px 48px;
+    display: grid;
+    grid-template-columns: minmax(0, 420px) minmax(0, 1fr);
+    gap: 24px;
+  }
+  section {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 24px;
+  }
+  h2 {
+    color: var(--primary);
+    font-size: 18px;
+    margin-bottom: 14px;
+  }
+  p, li {
+    font-size: 14px;
+  }
+  .lead {
+    color: var(--gray);
+    margin-bottom: 16px;
+  }
+  .status {
+    border-radius: 6px;
+    padding: 12px 14px;
+    margin-bottom: 16px;
+    font-size: 13px;
+  }
+  .status.ok {
+    background: var(--ok-bg);
+    color: var(--ok-text);
+  }
+  .status.warn {
+    background: var(--warn-bg);
+    color: var(--warn-text);
+  }
+  .step-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-top: 16px;
+  }
+  .step {
+    display: flex;
+    gap: 12px;
+  }
+  .step-num {
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    background: var(--primary);
+    color: var(--white);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+    flex: 0 0 auto;
+    margin-top: 2px;
+  }
+  .step-title {
+    font-weight: 700;
+    color: var(--primary);
+    margin-bottom: 4px;
+  }
+  .inline-code, code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    background: #f5f5f5;
+    border-radius: 4px;
+    padding: 2px 6px;
+  }
+  .table-wrap {
+    overflow-x: auto;
+    margin-top: 14px;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  th {
+    background: var(--primary);
+    color: var(--white);
+    text-align: left;
+    padding: 10px 12px;
+    white-space: nowrap;
+  }
+  td {
+    border-bottom: 1px solid var(--border);
+    padding: 10px 12px;
+    vertical-align: top;
+  }
+  tr:last-child td {
+    border-bottom: none;
+  }
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 16px;
+  }
+  .btn {
+    display: inline-block;
+    border: none;
+    border-radius: 6px;
+    padding: 10px 14px;
+    background: #eef2f7;
+    color: var(--primary);
+    text-decoration: none;
+    font: inherit;
+    cursor: pointer;
+  }
+  .btn.primary {
+    background: var(--primary);
+    color: var(--white);
+  }
+  .source-box {
+    margin-top: 16px;
+    padding: 14px;
+    border-radius: 6px;
+    background: #f8fafc;
+    border: 1px solid var(--border);
+    font-size: 13px;
+  }
+  .event-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .event-card {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+  }
+  .event-date {
+    color: var(--accent);
+    font-weight: 700;
+    font-size: 12px;
+    margin-bottom: 6px;
+  }
+  .event-title {
+    color: var(--primary);
+    font-weight: 700;
+    font-size: 16px;
+    margin-bottom: 6px;
+  }
+  .event-meta {
+    color: var(--gray);
+    font-size: 13px;
+    margin-top: 6px;
+    white-space: pre-wrap;
+  }
+  @media (max-width: 900px) {
+    main {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>イベント運用ガイド</h1>
+  <p>更新担当者は Google スプレッドシートに行を追加するだけ、公開ページはその内容を自動で読み込みます。</p>
+</header>
+
+<main>
+  <section>
+    <h2>使い方</h2>
+    <p class="lead">日々の更新で GitHub を触らない運用に切り替えるための確認ページです。</p>
+    <div id="status-box" class="status warn">まだ Google スプレッドシートの CSV URL が設定されていません。現在は <span class="inline-code">data/events.json</span> を表示します。</div>
+
+    <div class="step-list">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div>
+          <div class="step-title">Google スプレッドシートを用意する</div>
+          <div>イベント一覧は1シートで管理します。グループ紹介や活動報告を変えやすくしたい場合は別シートも追加できます。</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div>
+          <div class="step-title">ウェブ公開した CSV URL を取得する</div>
+          <div>イベント一覧は <span class="inline-code">sheetCsvUrl</span>、グループ紹介は <span class="inline-code">groupSheetCsvUrl</span>、活動報告は <span class="inline-code">reportSheetCsvUrl</span> に CSV URL を入れます。</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div>
+          <div class="step-title">以後の更新はシートだけ</div>
+          <div>担当者はイベント一覧シート、グループ紹介シート、活動報告シートを更新するだけでよく、GitHub 側の更新作業は不要です。</div>
+          <div style="margin-top:6px;color:var(--gray);">活動報告の画像はシートに直接挿入せず、Drive共有リンクを <span class="inline-code">driveShareUrl</span> に貼ってください。テンプレートの式で <span class="inline-code">imageUrl</span> を自動生成し、プレビューは <span class="inline-code">=IMAGE(imageUrlセル)</span> で確認できます。</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>意味</th>
+            <th>列名（英字）</th>
+            <th>列名（日本語）</th>
+            <th>例</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>日付</td>
+            <td><code>date</code></td>
+            <td><code>日付</code></td>
+            <td><code>2026-06-10</code></td>
+          </tr>
+          <tr>
+            <td>区分</td>
+            <td><code>category</code></td>
+            <td><code>区分</code></td>
+            <td>小グループ会</td>
+          </tr>
+          <tr>
+            <td>タイトル</td>
+            <td><code>title</code></td>
+            <td><code>タイトル</code></td>
+            <td>G2小グループ会 第1回</td>
+          </tr>
+          <tr>
+            <td>グループ</td>
+            <td><code>group</code></td>
+            <td><code>グループ</code></td>
+            <td><code>G2</code></td>
+          </tr>
+          <tr>
+            <td>回数</td>
+            <td><code>round</code></td>
+            <td><code>回</code></td>
+            <td><code>1</code></td>
+          </tr>
+          <tr>
+            <td>詳細</td>
+            <td><code>detail</code></td>
+            <td><code>詳細</code></td>
+            <td>墨の絵会館 18:30〜21:30</td>
+          </tr>
+          <tr>
+            <td>リンクURL</td>
+            <td><code>url</code></td>
+            <td><code>リンクURL</code></td>
+            <td>https://example.com</td>
+          </tr>
+          <tr>
+            <td>公開可否</td>
+            <td><code>visible</code></td>
+            <td><code>公開</code></td>
+            <td><code>TRUE</code> / <code>FALSE</code></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="source-box">
+      <strong>現在の設定</strong>
+      <div id="source-summary" style="margin-top:8px;">読み込み中です。</div>
+    </div>
+
+    <div class="actions">
+      <a class="btn primary" href="./index.html" target="_blank" rel="noopener noreferrer">公開ページを開く</a>
+      <button id="reload-button" class="btn" type="button">データを再読込</button>
+    </div>
+  </section>
+
+  <section>
+    <h2>表示プレビュー</h2>
+    <p class="lead">ここに今のイベントデータが並びます。公開ページと同じ元データを使います。</p>
+    <div id="event-list" class="event-list"></div>
+  </section>
+</main>
+
+<script>
+  const defaultConfig = {
+    sheetCsvUrl: '',
+    fallbackJsonUrl: './data/events.json',
+    groupSheetCsvUrl: '',
+    fallbackGroupsUrl: './data/groups.json',
+    reportSheetCsvUrl: '',
+    fallbackReportsUrl: './data/reports.json'
+  };
+  const statusBox = document.getElementById('status-box');
+  const sourceSummary = document.getElementById('source-summary');
+  const eventList = document.getElementById('event-list');
+
+  function escapeHtml(value) {
+    return String(value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  function parseCsv(text) {
+    const rows = [];
+    let current = '';
+    let row = [];
+    let inQuotes = false;
+
+    for (let i = 0; i < text.length; i += 1) {
+      const char = text[i];
+      const next = text[i + 1];
+
+      if (char === '"') {
+        if (inQuotes && next === '"') {
+          current += '"';
+          i += 1;
+        } else {
+          inQuotes = !inQuotes;
+        }
+      } else if (char === ',' && !inQuotes) {
+        row.push(current);
+        current = '';
+      } else if ((char === '\n' || char === '\r') && !inQuotes) {
+        if (char === '\r' && next === '\n') {
+          i += 1;
+        }
+        row.push(current);
+        rows.push(row);
+        row = [];
+        current = '';
+      } else {
+        current += char;
+      }
+    }
+
+    if (current.length > 0 || row.length > 0) {
+      row.push(current);
+      rows.push(row);
+    }
+
+    return rows;
+  }
+
+  function normalizeHeader(value) {
+    return String(value || '').trim().toLowerCase();
+  }
+
+  function pickValue(record, keys) {
+    for (const key of keys) {
+      const normalizedKey = normalizeHeader(key);
+      if (Object.prototype.hasOwnProperty.call(record, normalizedKey)) {
+        return String(record[normalizedKey] || '').trim();
+      }
+    }
+    return '';
+  }
+
+  function csvRowsToEvents(rows) {
+    if (!Array.isArray(rows) || rows.length < 2) {
+      return [];
+    }
+
+    const headers = rows[0].map((header) => normalizeHeader(header));
+    return rows.slice(1)
+      .filter((row) => row.some((cell) => String(cell || '').trim() !== ''))
+      .map((row) => {
+        const record = {};
+        headers.forEach((header, index) => {
+          record[header] = row[index] ?? '';
+        });
+
+        const visible = pickValue(record, ['visible', '公開']);
+        if (visible && ['0', 'false', 'no', '非公開'].includes(visible.toLowerCase())) {
+          return null;
+        }
+
+        return {
+          date: pickValue(record, ['date', '日付']),
+          category: pickValue(record, ['category', '区分']),
+          group: pickValue(record, ['group', 'グループ']),
+          round: pickValue(record, ['round', '回']),
+          title: pickValue(record, ['title', 'タイトル']),
+          detail: pickValue(record, ['detail', '詳細']),
+          url: pickValue(record, ['url', 'リンクurl', 'linkurl', 'リンク']),
+          linkLabel: pickValue(record, ['linklabel', 'リンク文字', 'button', 'ボタン文字'])
+        };
+      })
+      .filter((item) => item && item.date && item.title)
+      .sort((a, b) => a.date.localeCompare(b.date) || a.title.localeCompare(b.title, 'ja'));
+  }
+
+  function renderEvents(events) {
+    if (!Array.isArray(events) || events.length === 0) {
+      eventList.innerHTML = '<div class="event-card">表示できるイベントがありません。</div>';
+      return;
+    }
+
+    eventList.innerHTML = events.map((event) => `
+      <article class="event-card">
+        <div class="event-date">${escapeHtml(event.date)}</div>
+        <div class="event-title">${escapeHtml(event.title)}</div>
+        <div class="event-meta">${escapeHtml(event.category || '')}</div>
+        <div class="event-meta">${escapeHtml(event.detail || '')}</div>
+        <div class="event-meta">${event.url ? escapeHtml(event.url) : 'リンクなし'}</div>
+      </article>
+    `).join('');
+  }
+
+  async function loadConfig() {
+    try {
+      const response = await fetch('./data/site-config.json', { cache: 'no-store' });
+      if (!response.ok) {
+        throw new Error('Failed to fetch site-config.json');
+      }
+      return {
+        ...defaultConfig,
+        ...(await response.json())
+      };
+    } catch (error) {
+      console.error(error);
+      return defaultConfig;
+    }
+  }
+
+  async function loadEventsFromSheet(csvUrl) {
+    const response = await fetch(csvUrl, { cache: 'no-store' });
+    if (!response.ok) {
+      throw new Error('Failed to fetch published Google Sheet CSV');
+    }
+    return csvRowsToEvents(parseCsv(await response.text()));
+  }
+
+  async function loadEventsFromJson(jsonUrl) {
+    const response = await fetch(jsonUrl, { cache: 'no-store' });
+    if (!response.ok) {
+      throw new Error('Failed to fetch fallback events.json');
+    }
+    const data = await response.json();
+    return Array.isArray(data.events) ? data.events : [];
+  }
+
+  async function refresh() {
+    try {
+      const config = await loadConfig();
+      const usingSheet = Boolean(config.sheetCsvUrl);
+      const events = usingSheet
+        ? await loadEventsFromSheet(config.sheetCsvUrl)
+        : await loadEventsFromJson(config.fallbackJsonUrl);
+
+      renderEvents(events);
+
+      if (usingSheet) {
+        statusBox.className = 'status ok';
+        statusBox.textContent = 'Google スプレッドシート連携が有効です。更新担当者はシートを編集するだけで反映されます。';
+        sourceSummary.innerHTML = `
+          <div>データ元: Google スプレッドシート CSV</div>
+          <div style="margin-top:6px;word-break:break-all;">${escapeHtml(config.sheetCsvUrl)}</div>
+          <div style="margin-top:10px;">グループ紹介: ${config.groupSheetCsvUrl ? 'Google スプレッドシート CSV を使用' : `フォールバック JSON を使用 (${escapeHtml(config.fallbackGroupsUrl)})`}</div>
+          ${config.groupSheetCsvUrl ? `<div style="margin-top:6px;word-break:break-all;">${escapeHtml(config.groupSheetCsvUrl)}</div>` : ''}
+          <div style="margin-top:10px;">活動報告: ${config.reportSheetCsvUrl ? 'Google スプレッドシート CSV を使用' : `フォールバック JSON を使用 (${escapeHtml(config.fallbackReportsUrl)})`}</div>
+          ${config.reportSheetCsvUrl ? `<div style="margin-top:6px;word-break:break-all;">${escapeHtml(config.reportSheetCsvUrl)}</div>` : ''}
+          <div style="margin-top:6px;">読込件数: ${events.length}件</div>
+        `;
+      } else {
+        statusBox.className = 'status warn';
+        statusBox.innerHTML = 'まだ Google スプレッドシートの CSV URL が設定されていません。現在は <span class="inline-code">data/events.json</span> を表示します。';
+        sourceSummary.innerHTML = `
+          <div>データ元: フォールバック JSON</div>
+          <div style="margin-top:6px;">${escapeHtml(config.fallbackJsonUrl)}</div>
+          <div style="margin-top:10px;">グループ紹介: ${config.groupSheetCsvUrl ? 'Google スプレッドシート CSV を使用' : `フォールバック JSON を使用 (${escapeHtml(config.fallbackGroupsUrl)})`}</div>
+          ${config.groupSheetCsvUrl ? `<div style="margin-top:6px;word-break:break-all;">${escapeHtml(config.groupSheetCsvUrl)}</div>` : ''}
+          <div style="margin-top:10px;">活動報告: ${config.reportSheetCsvUrl ? 'Google スプレッドシート CSV を使用' : `フォールバック JSON を使用 (${escapeHtml(config.fallbackReportsUrl)})`}</div>
+          ${config.reportSheetCsvUrl ? `<div style="margin-top:6px;word-break:break-all;">${escapeHtml(config.reportSheetCsvUrl)}</div>` : ''}
+          <div style="margin-top:6px;">読込件数: ${events.length}件</div>
+        `;
+      }
+    } catch (error) {
+      console.error(error);
+      statusBox.className = 'status warn';
+      statusBox.textContent = 'データの読み込みに失敗しました。公開設定または URL を確認してください。';
+      sourceSummary.textContent = '読み込み失敗';
+      eventList.innerHTML = '<div class="event-card">データを表示できませんでした。</div>';
+    }
+  }
+
+  document.getElementById('reload-button').addEventListener('click', refresh);
+  refresh();
+</script>
+</body>
+</html>

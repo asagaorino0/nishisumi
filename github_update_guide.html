@@ -42,44 +42,45 @@
 
   <div class="summary">
     <h2>📋 更新の全体の流れ（5分でできる）</h2>
-    <div class="summary-row"><div class="summary-num">1</div><div>トムに「○○を変更して」と伝える</div></div>
-    <div class="summary-row"><div class="summary-num">2</div><div>トムが修正したHTMLファイルをダウンロード</div></div>
-    <div class="summary-row"><div class="summary-num">3</div><div>GitHubを開いてファイルをアップロード</div></div>
-    <div class="summary-row"><div class="summary-num">4</div><div>「Commit changes」を押す → 完了！</div></div>
+    <div class="summary-row"><div class="summary-num">1</div><div>Google スプレッドシートを開く</div></div>
+    <div class="summary-row"><div class="summary-num">2</div><div>イベントを1行追加・修正する</div></div>
+    <div class="summary-row"><div class="summary-num">3</div><div>数分後にサイトを見て確認する</div></div>
   </div>
 
-  <h2 class="section">STEP 1 — GitHubを開く</h2>
+  <h2 class="section">STEP 1 — スプレッドシートを開く</h2>
   <div class="step-block">
     <div class="step-num">1</div>
-    <div class="step-title">GitHubにアクセスしてログイン</div>
-    <div class="step-text">ブラウザで以下のURLを開く</div>
-    <div class="url-box">https://github.com/matsuba-commits/nishisumi</div>
-    <div class="highlight">ブックマークに登録しておくと便利です</div>
+    <div class="step-title">Google スプレッドシートを開く</div>
+    <div class="step-text">担当者はイベント管理用の Google スプレッドシートを開きます</div>
+    <div class="img-placeholder">📸 Google スプレッドシートの一覧画面</div>
+    <div class="highlight">GitHub や HTML ファイルは触りません。更新は表への入力だけです。</div>
   </div>
 
-  <h2 class="section">STEP 2 — ファイルをアップロード</h2>
+  <h2 class="section">STEP 2 — 行を追加する</h2>
   <div class="step-block">
     <div class="step-num">2</div>
-    <div class="step-title">「Add file」→「Upload files」をクリック</div>
-    <div class="step-text">画面上部の緑のボタン付近にある「Add file」をクリックして「Upload files」を選ぶ</div>
-    <div class="img-placeholder">📸 ［Add file ▼］ボタンの画像</div>
+    <div class="step-title">イベントを1行追加または修正する</div>
+    <div class="step-text">1行が1イベントです。日付・区分・タイトル・詳細・リンクURLなどを入力します</div>
+    <div class="img-placeholder">📸 入力用シートの画面</div>
+    <div class="point">日付は <strong>YYYY-MM-DD</strong> 形式で入力する</div>
+    <div class="point">非表示にしたい行は「公開」列を FALSE にする</div>
   </div>
 
+  <h2 class="section">STEP 3 — 自動反映を待つ</h2>
   <div class="step-block">
     <div class="step-num">3</div>
-    <div class="step-title">修正済みのHTMLファイルをドラッグ＆ドロップ</div>
-    <div class="step-text">トムからダウンロードしたHTMLファイルを点線のエリアにドラッグする</div>
-    <div class="img-placeholder">📸 ドラッグ＆ドロップエリアの画像</div>
-    <div class="point">ファイル名が表示されたらアップロード成功</div>
-    <div class="warn">同じファイル名で上書きされる。古いファイルは自動で置き換わる</div>
+    <div class="step-title">保存は自動</div>
+    <div class="step-text">Google スプレッドシートは自動保存されます。追加の保存ボタンは不要です</div>
+    <div class="img-placeholder">📸 自動保存表示の画像</div>
+    <div class="highlight">GitHub へのアップロード作業はありません。</div>
   </div>
 
-  <h2 class="section">STEP 3 — 保存して公開</h2>
+  <h2 class="section">STEP 4 — 公開ページを確認する</h2>
   <div class="step-block">
     <div class="step-num">4</div>
-    <div class="step-title">「Commit changes」（緑ボタン）を押す</div>
-    <div class="step-text">画面下部の緑ボタンをそのまま押すだけでOK。コメント入力は不要。</div>
-    <div class="img-placeholder">📸 「Commit changes」ボタンの画像</div>
+    <div class="step-title">数分後にサイトを開く</div>
+    <div class="step-text">以下のURLを開いてイベント一覧を確認します</div>
+    <div class="url-box">https://matsuba-commits.github.io/nishisumi/</div>
     <div class="highlight">1〜2分後にサイトに反映されます。反映前はキャッシュをクリアして確認してください（Ctrl＋Shift＋R）</div>
   </div>
 
@@ -91,15 +92,16 @@
     <div class="point">index.html → トップページ</div>
     <div class="point">group.html → 小グループ会ページ</div>
     <div class="point">report.html → 活動報告ページ</div>
+    <div class="point">admin.html → 現在のデータ元とイベント内容の確認</div>
   </div>
 
   <h2 class="section">困ったときは</h2>
   <div class="step-block">
     <div class="step-title">トムに相談する</div>
-    <div class="point">文章の変更・追加 → トムに依頼</div>
-    <div class="point">写真の差し替え → 写真をトムに送る</div>
-    <div class="point">レイアウトの修正 → トムに依頼</div>
-    <div class="highlight">「ここを変えて」と言えばトムがHTMLを修正してファイルを渡します。あとはアップロードするだけです。</div>
+    <div class="point">イベントの追記・修正は Google スプレッドシートで対応可能</div>
+    <div class="point">レイアウト変更やページ追加は開発者対応</div>
+    <div class="point">Google スプレッドシートの公開設定は初回のみ開発者対応</div>
+    <div class="highlight">日々のイベント更新は GitHub ではなく Google スプレッドシートだけ触れば済む構成を目指します。</div>
   </div>
 
 </div>
