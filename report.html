@@ -821,7 +821,8 @@
           .join('');
         const tagClass = getTagClass(item.category);
         const place = item.place ? `<span class="report-place">${escapeHtml(item.place)}</span>` : '';
-        const helperLink = `admin.html?mode=report-photo-helper&reportId=${encodeURIComponent(item.id)}&reportDate=${encodeURIComponent(item.date)}&reportTitle=${encodeURIComponent(item.title)}&reportCategory=${encodeURIComponent(item.categoryLabel || '')}&reportPlace=${encodeURIComponent(item.place || '')}`;
+        // const helperLink = `admin.html?mode=report-photo-helper&reportId=${encodeURIComponent(item.id)}&reportDate=${encodeURIComponent(item.date)}&reportTitle=${encodeURIComponent(item.title)}&reportCategory=${encodeURIComponent(item.categoryLabel || '')}&reportPlace=${encodeURIComponent(item.place || '')}`;
+        const helperLink = `admin.html?mode=report-photo-helper`;
         const imageMarkup = item.imageUrl
           ? `<img src="${escapeHtml(item.imageUrl)}" alt="${escapeHtml(item.imageAlt || item.categoryLabel)}">`
           : `<a class="report-img-link" href="${escapeAttribute(helperLink)}" target="_blank" rel="noopener noreferrer" aria-label="${escapeAttribute(`${item.title.replace(/\n/g, ' ')} の写真リンク入力補助を開く`)}">📸 写真をここに差し替え<br><small>別タブで設定方法を開く</small></a>`;
