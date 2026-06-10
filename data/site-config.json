@@ -5,5 +5,5 @@
   "fallbackGroupsUrl": "./data/groups.json",
   "reportSheetCsvUrl": "https://docs.google.com/spreadsheets/d/e/2PACX-1vR-Vrn3Smkqvr0XIwv7eiOrVkepH1bQExLlXZNLrKOG_bwfG4rQJgXooxoL_tGVIrN8YNDUYWQqgLYR/pub?gid=163030588&single=true&output=csv",
   "fallbackReportsUrl": "./data/reports.json",
-  "reportUploadWebhookUrl": ""
+  "reportUploadWebhookUrl": "https://script.google.com/macros/s/AKfycbwebfFmldQJKH08V1sRkJ_lac-AWCxa-5UZoF0phdXozkKvTEWfAtk7aSL9I_0gW5k7mg/exec"
 }
