@@ -16,8 +16,6 @@
 - `report.html`: 活動報告ページ
 - `group.html`: 小グループ会ページ
 - `github_update_guide.html`: 担当者向け更新手順
-- `apps_script_report_photo_upload.gs`: 活動報告写真アップロード用の Google Apps Script サンプル
-- `local_preview_server.py`: `localhost` で静的表示と写真アップロードのモックをまとめて試すためのローカルサーバー
 
 ## 運用メモ
 
@@ -54,7 +52,8 @@
   "fallbackGroupsUrl": "./data/groups.json",
   "reportSheetCsvUrl": "https://docs.google.com/spreadsheets/d/XXXXX/pub?gid=987654321&single=true&output=csv",
   "fallbackReportsUrl": "./data/reports.json",
-  "reportUploadWebhookUrl": "https://script.google.com/macros/s/XXXXX/exec"
+  "reportDriveFolderUrl": "https://drive.google.com/drive/folders/XXXXX",
+  "reportSheetEditUrl": "https://docs.google.com/spreadsheets/d/XXXXX/edit#gid=987654321"
 }
 ```
 
@@ -65,22 +64,14 @@
 3. 活動報告を追加する場合は活動報告シートを更新する
 4. 数分待って公開ページを確認する
 
-活動報告写真の管理画面アップロード:
+写真リンク入力を少し楽にする運用:
 
-1. Google スプレッドシートと同じブックに `apps_script_report_photo_upload.gs` の内容を貼り付ける
-2. `プロジェクトの設定` → `スクリプト プロパティ` に `DRIVE_FOLDER_ID` を登録する
-3. 必要なら `REPORT_SHEET_NAME` と `ADMIN_KEY` も `スクリプト プロパティ` に登録する
-4. `デプロイ` → `新しいデプロイ` → `ウェブアプリ` で公開する
-5. 発行された URL を `data/site-config.json` の `reportUploadWebhookUrl` に設定する
-6. `admin.html` の「活動報告の写真差し替え」から対象行と画像を選んで送信する
-
-localhost での試し方:
-
-1. このフォルダで `python3 local_preview_server.py` を実行する
-2. `http://127.0.0.1:8000/admin.html` を開く
-3. `localhost` では `reportUploadWebhookUrl` が空でも自動で `/mock/report-upload` を使う
-4. 写真を送ると `mock_uploads/` に保存され、管理画面上では送信成功と保存先URLを確認できる
-5. 本番の Drive / Sheets 更新ではないので、Apps Script 導入前のUI確認や送信動作確認に使う
+1. `data/site-config.json` の `reportDriveFolderUrl` に画像保存先フォルダURLを入れる
+2. `data/site-config.json` の `reportSheetEditUrl` に活動報告シートの編集URLを入れる
+3. `report.html` で写真がないカードの `📸 写真をここに差し替え` を押す
+4. 別タブで `admin.html` の補助画面が開き、Driveアップロードとスプシ貼り付けの手順が表示される
+5. そこから Drive フォルダと活動報告スプシを開く
+6. Drive 共有リンクを `driveShareUrl`、写真説明文を `imageAlt` に貼る
 
 補足:
 
@@ -91,13 +82,11 @@ localhost での試し方:
 - `group` は `G1` 〜 `G4`、`round` は `1` 〜 `4` を入れると `group.html` の予定欄にも反映されます
 - グループ紹介シートの列は `group` / `number` / `name` / `leader` / `memberCount` / `manager` / `visible` を使えます
 - 活動報告シートの列は `date` / `category` / `title` / `text` / `place` / `keywords` / `imageUrl` / `imageAlt` / `visible` を使えます
-- 活動報告シートでは `id` 列を追加しておくと、管理画面からの写真差し替え対象をより安全に特定できます。未設定でも `date + title` で照合します
 - 活動報告シートでは補助列として `driveShareUrl` / `imageFileId` / `previewImage` を追加しても大丈夫です。サイト側は余分な列を無視します
+- `reportDriveFolderUrl` は「画像をアップロードするDriveフォルダを開くためのURL」です。サイトから直接保存はしません
+- `reportSheetEditUrl` は「活動報告シートの編集画面URL」です。公開CSVのURLとは別に、編集用URLを設定してください
 - 画像はシートに直接挿入せず、Drive の共有リンクを `driveShareUrl` に貼る運用がおすすめです。テンプレートの式で `imageFileId` と `imageUrl` を自動生成します。`imageUrl` は `https://lh3.googleusercontent.com/d/FILE_ID` 形式です
 - Drive 側は「リンクを知っている全員が閲覧可」にしてください。`imageUrl` には Markdown 形式の `[...](...)` ではなく、画像URLそのものを入れてください
 - `previewImage` は `imageUrl` ではなく `imageFileId` から直接生成すると安定します。テンプレートでは `=IMAGE("https://lh3.googleusercontent.com/d/"&imageFileIdセル)` を使っています
 - `reports-sheet-template.csv` は 2行目に説明用の補助行が入っています。不要なら削除して構いません
 - ボタン文言は日付で自動切替します。`linkLabel` 列は不要です
-- `admin.html` の写真差し替えフォームは静的HTMLなので、実際の書き込み先には Apps Script などのWebhookが必要です
-- `localhost` では `local_preview_server.py` がモックWebhookも兼ねます。`reportUploadWebhookUrl` が空なら自動で `http://127.0.0.1:8000/mock/report-upload` ではなく、開いているオリジンの `/mock/report-upload` を使います
-- Apps Script 版では `DRIVE_FOLDER_ID` を `スクリプト プロパティ` に入れる前提です。`REPORT_SHEET_NAME` は未設定なら `活動報告` を使います

@@ -464,17 +464,6 @@
       <div class="highlight">GitHub へのアップロードやコミット操作はありません。1〜2分ほどでサイトに反映されます。</div>
     </div>
 
-    <h2 class="section">補足 — 管理画面から写真だけ差し替える方法</h2>
-    <div class="step-block">
-      <div class="step-title">「写真をここに差し替え」から管理画面で送ることもできます</div>
-      <div class="step-text">静的なサイト本体だけでは Drive やスプレッドシートへ書き込めないため、<code>admin.html</code> から Google Apps Script の Web アプリへ送る仕組みを使います。</div>
-      <div class="point"><code>admin.html</code> の「活動報告の写真差し替え」で対象の活動報告を選ぶ</div>
-      <div class="point">画像ファイルを選んで送信すると、Drive へ保存してシートの <code>imageUrl</code> などを更新する</div>
-      <div class="point">公開ページ側は数分後に新しい写真を読み込む</div>
-      <div class="warn">この機能を使うには、開発者が <code>apps_script_report_photo_upload.gs</code> を Google Apps Script に設定し、<code>data/site-config.json</code> に <code>reportUploadWebhookUrl</code> を入れておく必要があります。</div>
-      <div class="highlight">普段は従来どおりシート更新で十分です。写真だけ後から差し替えたいときに、この管理画面アップロードを使うイメージです。</div>
-    </div>
-
     <h2 class="section">STEP 5 — 公開ページを確認する</h2>
     <div class="step-block">
       <div class="step-num">5</div>

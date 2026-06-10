@@ -5,5 +5,6 @@
   "fallbackGroupsUrl": "./data/groups.json",
   "reportSheetCsvUrl": "https://docs.google.com/spreadsheets/d/e/2PACX-1vR-Vrn3Smkqvr0XIwv7eiOrVkepH1bQExLlXZNLrKOG_bwfG4rQJgXooxoL_tGVIrN8YNDUYWQqgLYR/pub?gid=163030588&single=true&output=csv",
   "fallbackReportsUrl": "./data/reports.json",
-  "reportUploadWebhookUrl": "https://script.google.com/macros/s/AKfycbwebfFmldQJKH08V1sRkJ_lac-AWCxa-5UZoF0phdXozkKvTEWfAtk7aSL9I_0gW5k7mg/exec"
+  "reportDriveFolderUrl": "https://drive.google.com/drive/folders/1avX6JcZfG9ADNrJGo_x_3K3idvViFPUd?usp=drive_link",
+  "reportSheetEditUrl": "https://docs.google.com/spreadsheets/d/1urdx6tlczcddvSLl3brm7yjp0u8z2NcQ2pOMlybOxoc/edit?gid=163030588#gid=163030588"
 }

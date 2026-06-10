@@ -300,6 +300,7 @@
       text-align: center;
       padding: 20px;
       font-weight: 500;
+      line-height: 1.6;
     }
 
     .report-img-link:hover {
@@ -820,10 +821,10 @@
           .join('');
         const tagClass = getTagClass(item.category);
         const place = item.place ? `<span class="report-place">${escapeHtml(item.place)}</span>` : '';
-        const uploadLink = `admin.html?reportId=${encodeURIComponent(item.id)}&returnTo=${encodeURIComponent(window.location.pathname.split('/').pop() || 'report.html')}`;
+        const helperLink = `admin.html?mode=report-photo-helper&reportId=${encodeURIComponent(item.id)}&reportDate=${encodeURIComponent(item.date)}&reportTitle=${encodeURIComponent(item.title)}&reportCategory=${encodeURIComponent(item.categoryLabel || '')}&reportPlace=${encodeURIComponent(item.place || '')}`;
         const imageMarkup = item.imageUrl
           ? `<img src="${escapeHtml(item.imageUrl)}" alt="${escapeHtml(item.imageAlt || item.categoryLabel)}">`
-          : `<a class="report-img-link" href="${escapeAttribute(uploadLink)}" target="_blank" rel="noopener noreferrer" aria-label="${escapeAttribute(`${item.title.replace(/\n/g, ' ')} の写真を差し替える`)}">📸 写真をここに差し替え<br></a>`;
+          : `<a class="report-img-link" href="${escapeAttribute(helperLink)}" target="_blank" rel="noopener noreferrer" aria-label="${escapeAttribute(`${item.title.replace(/\n/g, ' ')} の写真リンク入力補助を開く`)}">📸 写真をここに差し替え<br><small>別タブで設定方法を開く</small></a>`;
         return `
         <article class="report-item">
           <div class="report-img">${imageMarkup}</div>
