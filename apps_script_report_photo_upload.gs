@@ -1,19 +1,19 @@
-const REPORT_SHEET_NAME = '活動報告';
-const DRIVE_FOLDER_ID = 'PASTE_DRIVE_FOLDER_ID_HERE';
-const ADMIN_KEY = '';
+const DEFAULT_REPORT_SHEET_NAME = '活動報告';
 
 function doPost(e) {
   try {
     const payload = JSON.parse(e.postData.contents || '{}');
     validatePayload_(payload);
 
-    if (ADMIN_KEY && payload.operatorKey !== ADMIN_KEY) {
+    const adminKey = getScriptProperty_('ADMIN_KEY');
+    if (adminKey && payload.operatorKey !== adminKey) {
       return jsonResponse_({ ok: false, error: '管理キーが一致しません。' });
     }
 
-    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(REPORT_SHEET_NAME);
+    const sheetName = getScriptProperty_('REPORT_SHEET_NAME') || DEFAULT_REPORT_SHEET_NAME;
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(sheetName);
     if (!sheet) {
-      throw new Error(`シート "${REPORT_SHEET_NAME}" が見つかりません。`);
+      throw new Error(`シート "${sheetName}" が見つかりません。`);
     }
 
     const headerValues = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getDisplayValues()[0];
@@ -23,7 +23,8 @@ function doPost(e) {
       throw new Error('対象の活動報告行が見つかりませんでした。id 列、または date + title を確認してください。');
     }
 
-    const folder = DriveApp.getFolderById(DRIVE_FOLDER_ID);
+    const driveFolderId = getRequiredScriptProperty_('DRIVE_FOLDER_ID');
+    const folder = DriveApp.getFolderById(driveFolderId);
     const bytes = Utilities.base64Decode(payload.base64Data);
     const blob = Utilities.newBlob(bytes, payload.mimeType || 'application/octet-stream', payload.fileName || 'report-photo');
     const file = folder.createFile(blob);
@@ -56,6 +57,18 @@ function doPost(e) {
       error: error.message || '予期しないエラーが発生しました。'
     });
   }
+}
+
+function getScriptProperty_(key) {
+  return String(PropertiesService.getScriptProperties().getProperty(key) || '').trim();
+}
+
+function getRequiredScriptProperty_(key) {
+  const value = getScriptProperty_(key);
+  if (!value) {
+    throw new Error(`${key} が Script Properties に設定されていません。`);
+  }
+  return value;
 }
 
 function validatePayload_(payload) {

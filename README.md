@@ -68,8 +68,8 @@
 活動報告写真の管理画面アップロード:
 
 1. Google スプレッドシートと同じブックに `apps_script_report_photo_upload.gs` の内容を貼り付ける
-2. `REPORT_SHEET_NAME` と `DRIVE_FOLDER_ID` を実際の値に変える
-3. 必要なら `ADMIN_KEY` を設定する
+2. `プロジェクトの設定` → `スクリプト プロパティ` に `DRIVE_FOLDER_ID` を登録する
+3. 必要なら `REPORT_SHEET_NAME` と `ADMIN_KEY` も `スクリプト プロパティ` に登録する
 4. `デプロイ` → `新しいデプロイ` → `ウェブアプリ` で公開する
 5. 発行された URL を `data/site-config.json` の `reportUploadWebhookUrl` に設定する
 6. `admin.html` の「活動報告の写真差し替え」から対象行と画像を選んで送信する
@@ -100,3 +100,4 @@ localhost での試し方:
 - ボタン文言は日付で自動切替します。`linkLabel` 列は不要です
 - `admin.html` の写真差し替えフォームは静的HTMLなので、実際の書き込み先には Apps Script などのWebhookが必要です
 - `localhost` では `local_preview_server.py` がモックWebhookも兼ねます。`reportUploadWebhookUrl` が空なら自動で `http://127.0.0.1:8000/mock/report-upload` ではなく、開いているオリジンの `/mock/report-upload` を使います
+- Apps Script 版では `DRIVE_FOLDER_ID` を `スクリプト プロパティ` に入れる前提です。`REPORT_SHEET_NAME` は未設定なら `活動報告` を使います
