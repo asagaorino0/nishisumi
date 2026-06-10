@@ -170,6 +170,9 @@
     flex-direction: column;
     gap: 12px;
   }
+  .wide-section {
+    grid-column: 1 / -1;
+  }
   .event-card {
     border: 1px solid var(--border);
     border-radius: 8px;
@@ -193,8 +196,112 @@
     margin-top: 6px;
     white-space: pre-wrap;
   }
+  .report-photo-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(280px, 360px);
+    gap: 24px;
+    align-items: start;
+  }
+  .form-grid {
+    display: grid;
+    gap: 16px;
+  }
+  .field label {
+    display: block;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--primary);
+    margin-bottom: 6px;
+  }
+  .field input,
+  .field select,
+  .field textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font: inherit;
+    background: #fff;
+  }
+  .field textarea {
+    min-height: 90px;
+    resize: vertical;
+  }
+  .field-help {
+    margin-top: 6px;
+    font-size: 12px;
+    color: var(--gray);
+  }
+  .preview-panel {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    background: #fcfbf8;
+  }
+  .preview-image {
+    aspect-ratio: 3 / 2;
+    background: linear-gradient(135deg, #e8e0d4, #d4ccc0);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--gray);
+    font-size: 13px;
+    text-align: center;
+    padding: 20px;
+  }
+  .preview-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .preview-body {
+    padding: 16px;
+  }
+  .preview-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--primary);
+    margin-bottom: 8px;
+  }
+  .preview-meta {
+    font-size: 13px;
+    color: var(--gray);
+    white-space: pre-wrap;
+  }
+  .preview-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .preview-badge {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    padding: 4px 10px;
+    font-size: 11px;
+    background: #eef2f7;
+    color: var(--primary);
+  }
+  .muted-box {
+    border: 1px dashed var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+    background: #faf8f4;
+    font-size: 13px;
+    color: var(--gray);
+  }
+  .hidden-input {
+    display: none;
+  }
   @media (max-width: 900px) {
     main {
+      grid-template-columns: 1fr;
+    }
+    .wide-section {
+      grid-column: auto;
+    }
+    .report-photo-layout {
       grid-template-columns: 1fr;
     }
   }
@@ -316,6 +423,68 @@
     <p class="lead">ここに今のイベントデータが並びます。公開ページと同じ元データを使います。</p>
     <div id="event-list" class="event-list"></div>
   </section>
+
+  <section class="wide-section">
+    <h2>活動報告の写真差し替え</h2>
+    <p class="lead">活動報告シートに写真がない行へ、管理画面から画像を送れるようにするためのフォームです。実際の保存先は <span class="inline-code">reportUploadWebhookUrl</span> に設定した Apps Script Web アプリです。</p>
+
+    <div id="upload-config-status" class="status warn">アップロードWebhookは未設定です。まず <span class="inline-code">data/site-config.json</span> に <span class="inline-code">reportUploadWebhookUrl</span> を追加してください。</div>
+
+    <div class="report-photo-layout">
+      <div class="form-grid">
+        <div class="field">
+          <label for="report-select">対象の活動報告</label>
+          <select id="report-select">
+            <option value="">読み込み中です...</option>
+          </select>
+          <div class="field-help">4月27日のように写真が未設定の活動報告を選んでください。</div>
+        </div>
+
+        <div class="field">
+          <label for="photo-file">差し替える写真</label>
+          <input id="photo-file" type="file" accept="image/*">
+          <div class="field-help">JPG / PNG / WebP などブラウザで読める画像を送れます。</div>
+        </div>
+
+        <div class="field">
+          <label for="photo-alt">写真の説明文</label>
+          <input id="photo-alt" type="text" placeholder="例: 小グループ長勉強会の集合写真">
+          <div class="field-help">活動報告シートの <span class="inline-code">imageAlt</span> に入る想定です。</div>
+        </div>
+
+        <div class="field">
+          <label for="upload-note">補足メモ</label>
+          <textarea id="upload-note" placeholder="任意です。誰が送ったか、どの写真かなどのメモを残せます。"></textarea>
+        </div>
+
+        <div class="field">
+          <label for="operator-key">管理キー</label>
+          <input id="operator-key" type="password" placeholder="Apps Script 側で照合したい場合のみ入力">
+          <div class="field-help">任意です。Web アプリ側でキー照合を入れる場合にだけ使います。</div>
+        </div>
+
+        <div class="actions" style="margin-top:0;">
+          <button id="upload-button" class="btn primary" type="button">写真を Drive にアップロードして反映</button>
+          <button id="clear-upload-form" class="btn" type="button">入力をクリア</button>
+        </div>
+
+        <div id="upload-result" class="muted-box">まだ送信していません。Webhook設定後、このフォームから Drive とスプレッドシートを同時に更新できます。</div>
+      </div>
+
+      <aside class="preview-panel">
+        <div id="report-preview-image" class="preview-image">活動報告を選ぶと、現在の写真状態をここで確認できます。</div>
+        <div class="preview-body">
+          <div class="preview-badges">
+            <span id="report-preview-category" class="preview-badge">区分未選択</span>
+            <span id="report-preview-date" class="preview-badge">日付未選択</span>
+          </div>
+          <div id="report-preview-title" class="preview-title">活動報告を選択してください</div>
+          <div id="report-preview-place" class="preview-meta"></div>
+          <div id="report-preview-text" class="preview-meta" style="margin-top:8px;"></div>
+        </div>
+      </aside>
+    </div>
+  </section>
 </main>
 
 <script>
@@ -325,11 +494,29 @@
     groupSheetCsvUrl: '',
     fallbackGroupsUrl: './data/groups.json',
     reportSheetCsvUrl: '',
-    fallbackReportsUrl: './data/reports.json'
+    fallbackReportsUrl: './data/reports.json',
+    reportUploadWebhookUrl: ''
   };
   const statusBox = document.getElementById('status-box');
   const sourceSummary = document.getElementById('source-summary');
   const eventList = document.getElementById('event-list');
+  const uploadConfigStatus = document.getElementById('upload-config-status');
+  const reportSelect = document.getElementById('report-select');
+  const photoFileInput = document.getElementById('photo-file');
+  const photoAltInput = document.getElementById('photo-alt');
+  const uploadNoteInput = document.getElementById('upload-note');
+  const operatorKeyInput = document.getElementById('operator-key');
+  const uploadResult = document.getElementById('upload-result');
+  const previewImage = document.getElementById('report-preview-image');
+  const previewCategory = document.getElementById('report-preview-category');
+  const previewDate = document.getElementById('report-preview-date');
+  const previewTitle = document.getElementById('report-preview-title');
+  const previewPlace = document.getElementById('report-preview-place');
+  const previewText = document.getElementById('report-preview-text');
+  const preselectedReportId = new URLSearchParams(window.location.search).get('reportId') || '';
+
+  let currentConfig = { ...defaultConfig };
+  let currentReports = [];
 
   function escapeHtml(value) {
     return String(value)
@@ -395,6 +582,18 @@
     return '';
   }
 
+  function escapeAttribute(value) {
+    return escapeHtml(value).replace(/`/g, '&#96;');
+  }
+
+  function isLocalPreviewHost() {
+    return ['localhost', '127.0.0.1'].includes(window.location.hostname);
+  }
+
+  function getLocalMockWebhookUrl() {
+    return `${window.location.origin}/mock/report-upload`;
+  }
+
   function csvRowsToEvents(rows) {
     if (!Array.isArray(rows) || rows.length < 2) {
       return [];
@@ -429,6 +628,61 @@
       .sort((a, b) => a.date.localeCompare(b.date) || a.title.localeCompare(b.title, 'ja'));
   }
 
+  function rowsToReports(rows) {
+    if (!Array.isArray(rows) || rows.length < 2) {
+      return [];
+    }
+
+    const headers = rows[0].map((header) => normalizeHeader(header));
+    return rows.slice(1)
+      .filter((row) => row.some((cell) => String(cell || '').trim() !== ''))
+      .map((row) => {
+        const record = {};
+        headers.forEach((header, index) => {
+          record[header] = row[index] ?? '';
+        });
+
+        const visible = pickValue(record, ['visible', '公開']);
+        if (visible && ['0', 'false', 'no', '非公開'].includes(visible.toLowerCase())) {
+          return null;
+        }
+
+        const date = pickValue(record, ['date', '日付']);
+        const title = pickValue(record, ['title', 'タイトル']);
+        const category = pickValue(record, ['category', '区分']) || '活動報告';
+        const id = pickValue(record, ['id', '識別子']) || `${date}__${title}`;
+
+        return {
+          id,
+          date,
+          title,
+          category,
+          text: pickValue(record, ['text', 'body', 'report', '本文', '内容', '詳細']),
+          place: pickValue(record, ['place', 'location', 'venue', '会場', '場所']),
+          imageUrl: pickValue(record, ['imageurl', 'image', 'photo', '画像url', '写真url']),
+          imageAlt: pickValue(record, ['imagealt', 'alt', '画像alt', '代替テキスト'])
+        };
+      })
+      .filter((item) => item && item.date && item.title)
+      .sort((a, b) => b.date.localeCompare(a.date) || a.title.localeCompare(b.title, 'ja'));
+  }
+
+  function normalizeJsonReports(data) {
+    const items = Array.isArray(data?.reports) ? data.reports : [];
+    return items
+      .map((item) => ({
+        id: String(item.id || `${item.date || ''}__${item.title || ''}`).trim(),
+        date: String(item.date || '').trim(),
+        title: String(item.title || '').trim(),
+        category: String(item.categoryLabel || item.category || '活動報告').trim(),
+        text: String(item.text || item.body || item.detail || '').trim(),
+        place: String(item.place || item.location || '').trim(),
+        imageUrl: String(item.imageUrl || '').trim(),
+        imageAlt: String(item.imageAlt || '').trim()
+      }))
+      .filter((item) => item.date && item.title);
+  }
+
   function renderEvents(events) {
     if (!Array.isArray(events) || events.length === 0) {
       eventList.innerHTML = '<div class="event-card">表示できるイベントがありません。</div>';
@@ -444,6 +698,216 @@
         <div class="event-meta">${event.url ? escapeHtml(event.url) : 'リンクなし'}</div>
       </article>
     `).join('');
+  }
+
+  function renderReportOptions(items) {
+    if (!Array.isArray(items) || items.length === 0) {
+      reportSelect.innerHTML = '<option value="">活動報告が見つかりません</option>';
+      renderReportPreview(null);
+      return;
+    }
+
+    reportSelect.innerHTML = [
+      '<option value="">活動報告を選んでください</option>',
+      ...items.map((item) => {
+        const label = `${item.date}｜${item.title.replace(/\n/g, ' / ')}${item.imageUrl ? '' : '｜写真なし'}`;
+        return `<option value="${escapeAttribute(item.id)}">${escapeHtml(label)}</option>`;
+      })
+    ].join('');
+    applyReportSelection(preselectedReportId);
+  }
+
+  function applyReportSelection(reportId) {
+    if (!reportId) {
+      renderReportPreview(null);
+      return;
+    }
+
+    const matchedReport = currentReports.find((item) => item.id === reportId) || null;
+    if (!matchedReport) {
+      renderReportPreview(null);
+      setUploadResult('指定された活動報告が見つからなかったため、一覧から選び直してください。', 'warn');
+      return;
+    }
+
+    reportSelect.value = matchedReport.id;
+    renderReportPreview(matchedReport);
+    if (!photoAltInput.value.trim()) {
+      photoAltInput.value = matchedReport.imageAlt || `${matchedReport.title.replace(/\n/g, ' ')} の写真`;
+    }
+    setUploadResult('対象の活動報告を選択済みです。画像を選んで送信できます。', 'idle');
+  }
+
+  function renderReportPreview(item) {
+    if (!item) {
+      previewImage.innerHTML = '活動報告を選ぶと、現在の写真状態をここで確認できます。';
+      previewCategory.textContent = '区分未選択';
+      previewDate.textContent = '日付未選択';
+      previewTitle.textContent = '活動報告を選択してください';
+      previewPlace.textContent = '';
+      previewText.textContent = '';
+      return;
+    }
+
+    previewImage.innerHTML = item.imageUrl
+      ? `<img src="${escapeAttribute(item.imageUrl)}" alt="${escapeAttribute(item.imageAlt || item.title)}">`
+      : '📸 現在は写真が未設定です';
+    previewCategory.textContent = item.category || '活動報告';
+    previewDate.textContent = item.date || '日付なし';
+    previewTitle.textContent = item.title.replace(/\n/g, ' / ');
+    previewPlace.textContent = item.place ? `会場: ${item.place}` : '会場未設定';
+    previewText.textContent = item.text || '本文未設定';
+  }
+
+  function getSelectedReport() {
+    const selectedId = reportSelect.value;
+    return currentReports.find((item) => item.id === selectedId) || null;
+  }
+
+  function setUploadResult(message, type) {
+    uploadResult.textContent = message;
+    uploadResult.style.borderStyle = 'solid';
+    if (type === 'ok') {
+      uploadResult.style.background = 'var(--ok-bg)';
+      uploadResult.style.color = 'var(--ok-text)';
+      uploadResult.style.borderColor = 'rgba(37, 98, 58, 0.18)';
+    } else if (type === 'warn') {
+      uploadResult.style.background = 'var(--warn-bg)';
+      uploadResult.style.color = 'var(--warn-text)';
+      uploadResult.style.borderColor = 'rgba(145, 91, 0, 0.18)';
+    } else {
+      uploadResult.style.background = '#faf8f4';
+      uploadResult.style.color = 'var(--gray)';
+      uploadResult.style.borderColor = 'var(--border)';
+    }
+  }
+
+  async function loadReportsFromSheet(csvUrl) {
+    const response = await fetch(csvUrl, { cache: 'no-store' });
+    if (!response.ok) {
+      throw new Error('Failed to fetch published report Google Sheet CSV');
+    }
+    return rowsToReports(parseCsv(await response.text()));
+  }
+
+  async function loadReportsFromJson(jsonUrl) {
+    const response = await fetch(jsonUrl, { cache: 'no-store' });
+    if (!response.ok) {
+      throw new Error('Failed to fetch fallback reports.json');
+    }
+    return normalizeJsonReports(await response.json());
+  }
+
+  function updateUploadConfigStatus() {
+    if (currentConfig.reportUploadWebhookUrl) {
+      uploadConfigStatus.className = 'status ok';
+      const isLocalMock = currentConfig.reportUploadWebhookUrl === getLocalMockWebhookUrl();
+      uploadConfigStatus.innerHTML = isLocalMock
+        ? `localhost のモックアップロードを使用します。送信先: <span class="inline-code">${escapeHtml(currentConfig.reportUploadWebhookUrl)}</span>`
+        : `アップロードWebhook設定済みです。送信先: <span class="inline-code">${escapeHtml(currentConfig.reportUploadWebhookUrl)}</span>`;
+      return;
+    }
+
+    uploadConfigStatus.className = 'status warn';
+    uploadConfigStatus.innerHTML = 'アップロードWebhookは未設定です。まず <span class="inline-code">data/site-config.json</span> に <span class="inline-code">reportUploadWebhookUrl</span> を追加してください。';
+  }
+
+  function clearUploadForm() {
+    photoFileInput.value = '';
+    photoAltInput.value = '';
+    uploadNoteInput.value = '';
+    operatorKeyInput.value = '';
+    reportSelect.value = '';
+    renderReportPreview(null);
+    setUploadResult('まだ送信していません。Webhook設定後、このフォームから Drive とスプレッドシートを同時に更新できます。', 'idle');
+  }
+
+  function readFileAsDataUrl(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result || ''));
+      reader.onerror = () => reject(new Error('画像ファイルの読み込みに失敗しました。'));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function uploadReportPhoto() {
+    if (!currentConfig.reportUploadWebhookUrl) {
+      setUploadResult('Webhook URL が未設定です。先に data/site-config.json と Apps Script 側の設定を行ってください。', 'warn');
+      return;
+    }
+
+    const selectedReport = getSelectedReport();
+    if (!selectedReport) {
+      setUploadResult('対象の活動報告を選んでください。', 'warn');
+      return;
+    }
+
+    const file = photoFileInput.files && photoFileInput.files[0];
+    if (!file) {
+      setUploadResult('アップロードする画像を選んでください。', 'warn');
+      return;
+    }
+
+    const altText = photoAltInput.value.trim() || selectedReport.imageAlt || `${selectedReport.title.replace(/\n/g, ' ')} の写真`;
+    setUploadResult('画像を読み込み、Webhook に送信しています...', 'idle');
+
+    try {
+      const dataUrl = await readFileAsDataUrl(file);
+      const base64Data = dataUrl.split(',')[1] || '';
+      if (!base64Data) {
+        throw new Error('画像データの変換に失敗しました。');
+      }
+
+      const payload = {
+        reportId: selectedReport.id,
+        reportDate: selectedReport.date,
+        reportTitle: selectedReport.title,
+        reportCategory: selectedReport.category,
+        reportPlace: selectedReport.place,
+        currentImageUrl: selectedReport.imageUrl,
+        imageAlt: altText,
+        note: uploadNoteInput.value.trim(),
+        operatorKey: operatorKeyInput.value.trim(),
+        fileName: file.name,
+        mimeType: file.type || 'application/octet-stream',
+        base64Data
+      };
+
+      const response = await fetch(currentConfig.reportUploadWebhookUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+      const result = await response.json().catch(() => ({}));
+
+      if (!response.ok || result.ok === false) {
+        throw new Error(result.error || 'アップロードに失敗しました。');
+      }
+
+      const nextImageUrl = String(result.imageUrl || '').trim();
+      const nextDriveUrl = String(result.driveShareUrl || '').trim();
+      const message = [
+        'アップロードが完了しました。',
+        nextImageUrl ? `画像URL: ${nextImageUrl}` : '',
+        nextDriveUrl ? `Drive共有リンク: ${nextDriveUrl}` : '',
+        '数分後に公開CSVへ反映されたか確認してください。'
+      ].filter(Boolean).join('\n');
+      setUploadResult(message, 'ok');
+
+      currentReports = currentReports.map((item) => item.id === selectedReport.id
+        ? { ...item, imageUrl: nextImageUrl || item.imageUrl, imageAlt: altText }
+        : item);
+      renderReportOptions(currentReports);
+      reportSelect.value = selectedReport.id;
+      renderReportPreview(getSelectedReport());
+      photoAltInput.value = altText;
+    } catch (error) {
+      console.error(error);
+      setUploadResult(error.message || 'アップロード処理でエラーが発生しました。', 'warn');
+    }
   }
 
   async function loadConfig() {
@@ -482,12 +946,21 @@
   async function refresh() {
     try {
       const config = await loadConfig();
+      if (!config.reportUploadWebhookUrl && isLocalPreviewHost()) {
+        config.reportUploadWebhookUrl = getLocalMockWebhookUrl();
+      }
+      currentConfig = config;
       const usingSheet = Boolean(config.sheetCsvUrl);
       const events = usingSheet
         ? await loadEventsFromSheet(config.sheetCsvUrl)
         : await loadEventsFromJson(config.fallbackJsonUrl);
+      currentReports = config.reportSheetCsvUrl
+        ? await loadReportsFromSheet(config.reportSheetCsvUrl)
+        : await loadReportsFromJson(config.fallbackReportsUrl);
 
       renderEvents(events);
+      renderReportOptions(currentReports);
+      updateUploadConfigStatus();
 
       if (usingSheet) {
         statusBox.className = 'status ok';
@@ -520,10 +993,22 @@
       statusBox.textContent = 'データの読み込みに失敗しました。公開設定または URL を確認してください。';
       sourceSummary.textContent = '読み込み失敗';
       eventList.innerHTML = '<div class="event-card">データを表示できませんでした。</div>';
+      renderReportOptions([]);
+      updateUploadConfigStatus();
+      setUploadResult('活動報告データの読み込みに失敗したため、アップロード対象を選べません。', 'warn');
     }
   }
 
   document.getElementById('reload-button').addEventListener('click', refresh);
+  reportSelect.addEventListener('change', () => {
+    const selectedReport = getSelectedReport();
+    renderReportPreview(selectedReport);
+    if (selectedReport && !photoAltInput.value.trim()) {
+      photoAltInput.value = selectedReport.imageAlt || `${selectedReport.title.replace(/\n/g, ' ')} の写真`;
+    }
+  });
+  document.getElementById('upload-button').addEventListener('click', uploadReportPhoto);
+  document.getElementById('clear-upload-form').addEventListener('click', clearUploadForm);
   refresh();
 </script>
 </body>
