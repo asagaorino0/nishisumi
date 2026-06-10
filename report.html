@@ -610,6 +610,60 @@
       return escapeHtml(value).replace(/`/g, '&#96;');
     }
 
+    function unwrapMarkdownLink(value) {
+      const text = String(value || '').trim();
+      const markdownMatch = text.match(/^\[[^\]]*\]\((https?:\/\/[^)\s]+)\)$/i);
+      return markdownMatch ? markdownMatch[1].trim() : text;
+    }
+
+    function extractGoogleDriveFileId(value) {
+      const text = unwrapMarkdownLink(value);
+      if (!text) {
+        return '';
+      }
+
+      const directMatch = text.match(/\/d\/([a-zA-Z0-9_-]+)/);
+      if (directMatch) {
+        return directMatch[1];
+      }
+
+      try {
+        const url = new URL(text);
+        return url.searchParams.get('id') || '';
+      } catch (error) {
+        return '';
+      }
+    }
+
+    function getReportImageSource(value) {
+      const raw = unwrapMarkdownLink(value);
+      const fileId = extractGoogleDriveFileId(raw);
+
+      if (fileId) {
+        return {
+          src: `https://drive.google.com/thumbnail?id=${encodeURIComponent(fileId)}&sz=w1600`,
+          fallbacks: [
+            `https://drive.google.com/uc?export=view&id=${encodeURIComponent(fileId)}`,
+            `https://lh3.googleusercontent.com/d/${encodeURIComponent(fileId)}`
+          ]
+        };
+      }
+
+      try {
+        const url = new URL(raw);
+        if (url.protocol === 'https:' || url.protocol === 'http:') {
+          return {
+            src: raw,
+            fallbacks: []
+          };
+        }
+      } catch (error) {
+        return null;
+      }
+
+      return null;
+    }
+
     function parseKeywords(value) {
       if (Array.isArray(value)) {
         return value.map((item) => String(item || '').trim()).filter(Boolean);
@@ -823,8 +877,9 @@
         const place = item.place ? `<span class="report-place">${escapeHtml(item.place)}</span>` : '';
         // const helperLink = `admin.html?mode=report-photo-helper&reportId=${encodeURIComponent(item.id)}&reportDate=${encodeURIComponent(item.date)}&reportTitle=${encodeURIComponent(item.title)}&reportCategory=${encodeURIComponent(item.categoryLabel || '')}&reportPlace=${encodeURIComponent(item.place || '')}`;
         const helperLink = `admin.html?mode=report-photo-helper`;
-        const imageMarkup = item.imageUrl
-          ? `<img src="${escapeHtml(item.imageUrl)}" alt="${escapeHtml(item.imageAlt || item.categoryLabel)}">`
+        const imageSource = getReportImageSource(item.imageUrl);
+        const imageMarkup = imageSource
+          ? `<img src="${escapeAttribute(imageSource.src)}" data-fallbacks="${escapeAttribute(imageSource.fallbacks.join('||'))}" alt="${escapeHtml(item.imageAlt || item.categoryLabel)}" loading="lazy" decoding="async" referrerpolicy="no-referrer">`
           : `<a class="report-img-link" href="${escapeAttribute(helperLink)}" target="_blank" rel="noopener noreferrer" aria-label="${escapeAttribute(`${item.title.replace(/\n/g, ' ')} の写真リンク入力補助を開く`)}">📸 写真をここに差し替え<br><small>別タブで設定方法を開く</small></a>`;
         return `
         <article class="report-item">
@@ -842,6 +897,23 @@
         </article>
       `;
       }).join('');
+
+      reportList.querySelectorAll('.report-img img[data-fallbacks]').forEach((img) => {
+        img.addEventListener('error', () => {
+          const fallbacks = String(img.dataset.fallbacks || '')
+            .split('||')
+            .map((value) => value.trim())
+            .filter(Boolean);
+          const fallbackIndex = Number(img.dataset.fallbackIndex || '0');
+
+          if (fallbackIndex >= fallbacks.length) {
+            return;
+          }
+
+          img.dataset.fallbackIndex = String(fallbackIndex + 1);
+          img.src = fallbacks[fallbackIndex];
+        });
+      });
     }
 
     function renderLoadError() {

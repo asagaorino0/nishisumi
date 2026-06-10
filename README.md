@@ -85,8 +85,8 @@
 - 活動報告シートでは補助列として `driveShareUrl` / `imageFileId` / `previewImage` を追加しても大丈夫です。サイト側は余分な列を無視します
 - `reportDriveFolderUrl` は「画像をアップロードするDriveフォルダを開くためのURL」です。サイトから直接保存はしません
 - `reportSheetEditUrl` は「活動報告シートの編集画面URL」です。公開CSVのURLとは別に、編集用URLを設定してください
-- 画像はシートに直接挿入せず、Drive の共有リンクを `driveShareUrl` に貼る運用がおすすめです。テンプレートの式で `imageFileId` と `imageUrl` を自動生成します。`imageUrl` は `https://lh3.googleusercontent.com/d/FILE_ID` 形式です
+- 画像はシートに直接挿入せず、Drive の共有リンクを `driveShareUrl` に貼る運用がおすすめです。テンプレートの式で `imageFileId` と `imageUrl` を自動生成します。`imageUrl` は `https://drive.google.com/thumbnail?id=FILE_ID&sz=w1600` 形式がおすすめです
 - Drive 側は「リンクを知っている全員が閲覧可」にしてください。`imageUrl` には Markdown 形式の `[...](...)` ではなく、画像URLそのものを入れてください
-- `previewImage` は `imageUrl` ではなく `imageFileId` から直接生成すると安定します。テンプレートでは `=IMAGE("https://lh3.googleusercontent.com/d/"&imageFileIdセル)` を使っています
+- `previewImage` は `imageUrl` ではなく `imageFileId` から直接生成すると安定します。テンプレートでは `=IMAGE("https://drive.google.com/thumbnail?id="&imageFileIdセル&"&sz=w1600")` を使っています
 - `reports-sheet-template.csv` は 2行目に説明用の補助行が入っています。不要なら削除して構いません
 - ボタン文言は日付で自動切替します。`linkLabel` 列は不要です
