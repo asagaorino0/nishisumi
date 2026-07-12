@@ -4,7 +4,7 @@
 
 ## ファイル構成
 
-- `index.html`: トップページ。Google スプレッドシート CSV を優先し、未設定時は `data/events.json` を読み込みます
+- `index.html`: トップページ。Google スプレッドシート CSV を優先し、未設定時は `data/events.json` を読み込みます。年間スケジュールも同じイベントシートから自動表示します
 - `admin.html`: イベント運用ガイドとデータ確認ページ
 - `data/site-config.json`: Google スプレッドシートの CSV URL 設定
 - `data/events.json`: フォールバック用イベントデータ
@@ -17,9 +17,30 @@
 - `group.html`: 小グループ会ページ
 - `github_update_guide.html`: 担当者向け更新手順
 
+## ローカル確認
+
+このサイトは静的HTMLなので、ビルドは不要です。`fetch()` で `data/*.json` を読むため、`file://` ではなくローカルサーバー経由で開いてください。
+
+```bash
+npm run dev
+```
+
+起動後に以下をブラウザで開きます。
+
+- `http://localhost:8000/`
+- `http://localhost:8000/report.html`
+- `http://localhost:8000/group.html`
+- `http://localhost:8000/admin.html`
+
+`npm` を使わない場合は、同じことを次でも実行できます。
+
+```bash
+python3 -m http.server 8000
+```
+
 ## 運用メモ
 
-日々の更新は Google スプレッドシートを更新する運用を想定しています。イベント一覧、グループ紹介、活動報告はそれぞれ別シートで管理できます。
+日々の更新は Google スプレッドシートを更新する運用を想定しています。イベント一覧、グループ紹介、活動報告はそれぞれ別シートで管理できます。トップページの「2026年度 年間スケジュール」もイベント一覧シートの内容を使って自動更新されます。
 
 初回セットアップ:
 

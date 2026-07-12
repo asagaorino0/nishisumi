@@ -339,6 +339,35 @@
     return match ? match[1] : '';
   }
 
+  function assignSequentialRounds(events) {
+    const counters = {
+      G1: 0,
+      G2: 0,
+      G3: 0,
+      G4: 0
+    };
+
+    return events.map((item) => {
+      if (!item.group || !groupMeta[item.group]) {
+        return item;
+      }
+
+      if (item.round) {
+        const roundNumber = Number(item.round);
+        if (Number.isFinite(roundNumber) && roundNumber > counters[item.group]) {
+          counters[item.group] = roundNumber;
+        }
+        return item;
+      }
+
+      counters[item.group] += 1;
+      return {
+        ...item,
+        round: String(counters[item.group])
+      };
+    });
+  }
+
   function parseDate(dateString) {
     const date = new Date(`${dateString}T00:00:00+09:00`);
     return Number.isNaN(date.getTime()) ? null : date;
@@ -609,7 +638,9 @@
       const allEvents = config.sheetCsvUrl
         ? await loadEventsFromSheet(config.sheetCsvUrl)
         : await loadEventsFromJson(config.fallbackJsonUrl);
-      const groupEvents = allEvents.filter((item) => item.group && groupMeta[item.group]);
+      const groupEvents = assignSequentialRounds(
+        allEvents.filter((item) => item.group && groupMeta[item.group])
+      );
 
       groupCards.forEach((card) => {
         const groupKey = card.dataset.group;

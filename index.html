@@ -154,11 +154,6 @@
     .annual-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); border-right: 1px solid var(--border); text-align: center; vertical-align: middle; background: white; }
     .annual-table td:first-child { background: var(--light); font-weight: 700; color: var(--primary); font-size: 11px; }
     .annual-table tr:last-child td { border-bottom: none; }
-    .ev-tag { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 10px; font-weight: 700; }
-    .ev-block { background: #fde8e8; color: #c0392b; }
-    .ev-branch { background: #e8f0fe; color: #1a3a8c; }
-    .ev-group { background: #fdf3e3; color: #c8973a; }
-    .ev-other { background: #e8f5e9; color: #2e7d32; }
     .ev-done { color: #999; text-decoration: line-through; font-size: 11px; }
     .ev-next { font-weight: 700; color: #e65100; }
   </style>
@@ -169,39 +164,8 @@
         <th>4月</th><th>5月</th><th>6月</th><th>7月</th><th>8月</th><th>9月</th><th>10月</th><th>11月</th><th>12月</th><th>1月</th><th>2月</th><th>3月</th>
       </tr>
     </thead>
-    <tbody>
-      <tr>
-        <td>ブロック役委会</td>
-        <td class="ev-done">4/15</td><td class="ev-done">5/18</td><td>6/10</td><td>7/14</td><td>8/10</td><td>9/8</td><td>10/9</td><td>11/10</td><td>12/8</td><td>1/14</td><td>2/9</td><td>3月</td>
-      </tr>
-      <tr>
-        <td>支部幹事会</td>
-        <td class="ev-done">4/21</td><td class="ev-done">5/22</td><td>6/19</td><td>7/17</td><td>8/17</td><td>9/11</td><td>10/16</td><td>11/13</td><td>12/10</td><td>1/22</td><td>2/12</td><td>3月</td>
-      </tr>
-      <tr>
-        <td>支部例会</td>
-        <td>－</td><td class="ev-done">合同例会<br>5/21</td><td>6/15</td><td>7/28</td><td>－</td><td>9/28</td><td>－</td><td>11/27</td><td>12/10<br>忘年</td><td>－</td><td>2/24</td><td>3/24</td>
-      </tr>
-      <tr>
-        <td>G1（宮高）</td>
-        <td>－</td><td class="ev-done">5/19</td><td>－</td><td>7/7</td><td>－</td><td>－</td><td>10/7</td><td>－</td><td>－</td><td>1/13</td><td>－</td><td>－</td>
-      </tr>
-      <tr>
-        <td>G2（松塲）</td>
-        <td>－</td><td>－</td><td class="ev-next">6/10 ▶</td><td>－</td><td>－</td><td>9/9</td><td>－</td><td>－</td><td>12/9</td><td>－</td><td>2/10</td><td>－</td>
-      </tr>
-      <tr>
-        <td>G3（松浦）</td>
-        <td>－</td><td class="ev-done">5/15</td><td>－</td><td>7/7</td><td>－</td><td>－</td><td>10/6</td><td>－</td><td>－</td><td>1/12</td><td>－</td><td>－</td>
-      </tr>
-      <tr>
-        <td>G4（清水）</td>
-        <td>－</td><td>－</td><td class="ev-next">6/3 ▶</td><td>－</td><td>－</td><td>－</td><td>－</td><td>－</td><td>－</td><td>－</td><td>－</td><td>－</td>
-      </tr>
-      <tr>
-        <td>その他</td>
-        <td class="ev-done">指針4/9</td><td class="ev-done">大阪総会<br>5/13</td><td>指針6/13</td><td>住之江<br>博物館<br>7/26<br>指針7/11</td><td>指針8/8</td><td>指針9/12</td><td>指針10/10<br>西成博物館<br>11/8</td><td>全大阪<br>11/5</td><td>－</td><td>役員研修<br>1/7</td><td>支部方針</td><td>－</td>
-      </tr>
+    <tbody id="annual-schedule-body">
+      <tr><td colspan="13">読み込み中です。</td></tr>
     </tbody>
   </table>
   <p style="font-size:11px;color:var(--gray);margin-top:12px;">※取消線は開催済み　▶は次回開催　詳細はe-doyuにて</p>
@@ -215,6 +179,7 @@
 </footer>
 <script>
   const eventList = document.querySelector('.event-list');
+  const annualScheduleBody = document.getElementById('annual-schedule-body');
   const weekdayFormatter = new Intl.DateTimeFormat('ja-JP', { weekday: 'long' });
   const defaultConfig = {
     sheetCsvUrl: '',
@@ -222,6 +187,17 @@
   };
   const today = new Date();
   today.setHours(0, 0, 0, 0);
+  const scheduleRows = [
+    { key: 'block', label: 'ブロック役委会' },
+    { key: 'board', label: '支部幹事会' },
+    { key: 'branch', label: '支部例会' },
+    { key: 'G1', label: 'G1（宮高）' },
+    { key: 'G2', label: 'G2（松塲）' },
+    { key: 'G3', label: 'G3（松浦）' },
+    { key: 'G4', label: 'G4（清水）' },
+    { key: 'other', label: 'その他' }
+  ];
+  const fiscalMonths = [4, 5, 6, 7, 8, 9, 10, 11, 12, 1, 2, 3];
 
   function escapeHtml(value) {
     return String(value)
@@ -247,6 +223,77 @@
   function parseEventDate(dateString) {
     const date = new Date(`${dateString}T00:00:00+09:00`);
     return Number.isNaN(date.getTime()) ? null : date;
+  }
+
+  function inferGroup(record) {
+    const value = String(record.group || '').trim().toUpperCase();
+    if (['G1', 'G2', 'G3', 'G4'].includes(value)) {
+      return value;
+    }
+    const match = String(record.title || '').match(/\b(G[1-4])\b/i);
+    return match ? match[1].toUpperCase() : '';
+  }
+
+  function getScheduleRowKey(event) {
+    const group = inferGroup(event);
+    if (group) {
+      return group;
+    }
+
+    const category = String(event.category || '').trim();
+    const title = String(event.title || '');
+    const text = `${category} ${title}`;
+
+    if (category === '支部行事') {
+      return '';
+    }
+
+    if (text.includes('ブロック')) {
+      return 'block';
+    }
+    if (text.includes('幹事')) {
+      return 'board';
+    }
+    if (text.includes('支部') || text.includes('例会') || text.includes('合同例会')) {
+      return 'branch';
+    }
+    return 'other';
+  }
+
+  function isWithinFiscalMonths(date) {
+    if (!date) {
+      return false;
+    }
+    const month = date.getMonth() + 1;
+    return fiscalMonths.includes(month);
+  }
+
+  function formatScheduleCell(event, rowKey, nextUpcomingKey) {
+    const date = parseEventDate(event.date);
+    if (!date) {
+      return '－';
+    }
+
+    const month = date.getMonth() + 1;
+    const day = date.getDate();
+    const upcoming = date.getTime() >= today.getTime();
+    const dateText = `${month}/${day}`;
+    const category = String(event.category || '').trim();
+    const title = String(event.title || '');
+    const scheduleIndex = String(event.index || '').trim();
+    let body = dateText;
+
+    if (rowKey === 'other' && category) {
+      body = `${escapeHtml(category)}${dateText}`;
+    } else if (rowKey === 'branch' && scheduleIndex) {
+      body = `${dateText}<br>${escapeHtml(scheduleIndex)}`;
+    }
+
+    const eventKey = `${event.date}__${rowKey}__${title}__${scheduleIndex}`;
+    if (upcoming && eventKey === nextUpcomingKey) {
+      return `<span class="ev-next">${body} ▶</span>`;
+    }
+    return upcoming ? body : `<span class="ev-done">${body}</span>`;
   }
 
   function getEventLinkLabel(event) {
@@ -335,7 +382,9 @@
 
         return {
           date: pickValue(record, ['date', '日付']),
+          index: pickValue(record, ['index', 'インデックス']),
           category: pickValue(record, ['category', '区分']),
+          group: pickValue(record, ['group', 'グループ']),
           title: pickValue(record, ['title', 'タイトル']),
           detail: pickValue(record, ['detail', '詳細']),
           url: pickValue(record, ['url', 'リンクurl', 'linkurl', 'リンク']),
@@ -388,6 +437,48 @@
     }).join('');
   }
 
+  function renderAnnualSchedule(events) {
+    const buckets = Object.fromEntries(scheduleRows.map((row) => [row.key, new Map()]));
+    const filtered = (Array.isArray(events) ? events : []).filter((event) => isWithinFiscalMonths(parseEventDate(event.date)));
+
+    filtered.forEach((event) => {
+      const date = parseEventDate(event.date);
+      if (!date) {
+        return;
+      }
+      const month = date.getMonth() + 1;
+      const rowKey = getScheduleRowKey(event);
+      if (!rowKey || !buckets[rowKey]) {
+        return;
+      }
+      const current = buckets[rowKey].get(month) || [];
+      current.push(event);
+      current.sort((a, b) => a.date.localeCompare(b.date) || a.title.localeCompare(b.title, 'ja'));
+      buckets[rowKey].set(month, current);
+    });
+
+    annualScheduleBody.innerHTML = scheduleRows.map((row) => {
+      const rowUpcomingItems = filtered
+        .filter((event) => {
+          const date = parseEventDate(event.date);
+          return getScheduleRowKey(event) === row.key && date && date.getTime() >= today.getTime();
+        })
+        .sort((a, b) => a.date.localeCompare(b.date) || String(a.title || '').localeCompare(String(b.title || ''), 'ja'));
+      const nextUpcomingKey = rowUpcomingItems.length
+        ? `${rowUpcomingItems[0].date}__${row.key}__${String(rowUpcomingItems[0].title || '')}__${String(rowUpcomingItems[0].index || '')}`
+        : '';
+
+      const cells = fiscalMonths.map((month) => {
+        const items = buckets[row.key].get(month) || [];
+        if (!items.length) {
+          return '<td>－</td>';
+        }
+        return `<td>${items.map((event) => formatScheduleCell(event, row.key, nextUpcomingKey)).join('<br>')}</td>`;
+      }).join('');
+      return `<tr><td>${row.label}</td>${cells}</tr>`;
+    }).join('');
+  }
+
   async function loadConfig() {
     try {
       const response = await fetch('./data/site-config.json', { cache: 'no-store' });
@@ -430,8 +521,10 @@
         ? await loadEventsFromSheet(config.sheetCsvUrl)
         : await loadEventsFromJson(config.fallbackJsonUrl);
       renderEvents(events);
+      renderAnnualSchedule(events);
     } catch (error) {
       eventList.innerHTML = '<div class="event-empty">イベントの読み込みに失敗しました。Googleスプレッドシート公開設定、または `data/events.json` を確認してください。</div>';
+      annualScheduleBody.innerHTML = '<tr><td colspan="13">年間スケジュールの読み込みに失敗しました。</td></tr>';
       console.error(error);
     }
   }
