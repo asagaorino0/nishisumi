@@ -880,7 +880,7 @@
         const imageSource = getReportImageSource(item.imageUrl);
         const imageMarkup = imageSource
           ? `<img src="${escapeAttribute(imageSource.src)}" data-fallbacks="${escapeAttribute(imageSource.fallbacks.join('||'))}" alt="${escapeHtml(item.imageAlt || item.categoryLabel)}" loading="lazy" decoding="async" referrerpolicy="no-referrer">`
-          : `<a class="report-img-link" href="${escapeAttribute(helperLink)}" target="_blank" rel="noopener noreferrer" aria-label="${escapeAttribute(`${item.title.replace(/\n/g, ' ')} の写真リンク入力補助を開く`)}">📸 写真をここに差し替え<br><small>別タブで設定方法を開く</small></a>`;
+          : `<a class="report-img-link" href="${escapeAttribute(helperLink)}" target="_blank" rel="noopener noreferrer" aria-label="${escapeAttribute(`${item.title.replace(/\n/g, ' ')} の写真リンク入力補助を開く`)}">📸 写真をここに差し替え</a>`;
         return `
         <article class="report-item">
           <div class="report-img">${imageMarkup}</div>
