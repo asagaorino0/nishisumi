@@ -185,7 +185,7 @@
     sheetCsvUrl: '',
     fallbackJsonUrl: './data/events.json'
   };
-  const UPCOMING_EVENT_WINDOW_DAYS = 60;
+  const UPCOMING_EVENT_WINDOW_DAYS = 90;
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const upcomingLimit = new Date(today);
@@ -403,7 +403,14 @@
   function renderEvents(events) {
     const upcomingEvents = (Array.isArray(events) ? events : []).filter((event) => {
       const date = parseEventDate(event.date);
-      return date && date.getTime() >= today.getTime() && date.getTime() <= upcomingLimit.getTime();
+      const rowKey = getScheduleRowKey(event);
+      const scheduleIndex = String(event.index || '').trim();
+      return date
+        && date.getTime() >= today.getTime()
+        && date.getTime() <= upcomingLimit.getTime()
+        && rowKey !== 'block'
+        && rowKey !== 'board'
+        && (rowKey !== 'branch' || scheduleIndex);
     });
 
     if (upcomingEvents.length === 0) {
@@ -417,6 +424,14 @@
         return '';
       }
 
+      const scheduleIndex = String(event.index || '').trim();
+      const categoryLabel = String(event.category || 'イベント').trim();
+      const rawTitle = String(event.title || '').trim();
+      const titleLabel = categoryLabel === '支部例会' && scheduleIndex
+        ? (rawTitle.includes('支部例会')
+          ? rawTitle.replace('支部例会', `支部例会 ${scheduleIndex}`)
+          : `${rawTitle} ${scheduleIndex}`.trim())
+        : rawTitle;
       const detail = event.detail ? `<div class="event-detail">${escapeHtml(event.detail)}</div>` : '';
       const link = event.url
         ? `<a href="${escapeHtml(event.url)}" class="event-link" target="_blank" rel="noopener noreferrer">${escapeHtml(getEventLinkLabel(event))}</a>`
@@ -430,8 +445,8 @@
             <div class="event-weekday">${formatted.weekday}</div>
           </div>
           <div class="event-content">
-            <span class="event-tag">${escapeHtml(event.category || 'イベント')}</span>
-            <div class="event-title">${escapeHtml(event.title || '')}</div>
+            <span class="event-tag">${escapeHtml(categoryLabel)}</span>
+            <div class="event-title">${escapeHtml(titleLabel)}</div>
             ${detail}
             ${link}
           </div>
