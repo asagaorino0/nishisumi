@@ -185,8 +185,11 @@
     sheetCsvUrl: '',
     fallbackJsonUrl: './data/events.json'
   };
+  const UPCOMING_EVENT_WINDOW_DAYS = 60;
   const today = new Date();
   today.setHours(0, 0, 0, 0);
+  const upcomingLimit = new Date(today);
+  upcomingLimit.setDate(upcomingLimit.getDate() + UPCOMING_EVENT_WINDOW_DAYS);
   const scheduleRows = [
     { key: 'block', label: 'ブロック役委会' },
     { key: 'board', label: '支部幹事会' },
@@ -400,7 +403,7 @@
   function renderEvents(events) {
     const upcomingEvents = (Array.isArray(events) ? events : []).filter((event) => {
       const date = parseEventDate(event.date);
-      return date && date.getTime() >= today.getTime();
+      return date && date.getTime() >= today.getTime() && date.getTime() <= upcomingLimit.getTime();
     });
 
     if (upcomingEvents.length === 0) {
