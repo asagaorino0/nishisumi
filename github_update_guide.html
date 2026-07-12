@@ -319,7 +319,7 @@
   <div class="cover">
     <h1>活動報告 スプレッドシート更新マニュアル</h1>
     <p>西成住之江支部 ポータルサイト｜担当者向け手順書</p>
-    <div class="url">https://matsuba-commits.github.io/nishisumi/report.html</div>
+    <div class="url" data-page-url="report.html"></div>
   </div>
 
   <div class="container">
@@ -469,7 +469,7 @@
       <div class="step-num">5</div>
       <div class="step-title">活動報告ページを開いて確認する</div>
       <div class="step-text">数分後に以下の URL を開き、追加した活動報告が表示されているか確認します。</div>
-      <div class="url-box">https://matsuba-commits.github.io/nishisumi/report.html</div>
+      <div class="url-box" data-page-url="report.html"></div>
       <div class="point">画像つきで確認したいときは <code>report.html</code> を開く</div>
       <div class="point">設定や読込状況を確認したいときは <code>admin.html</code> を開く</div>
       <div class="warn">すぐに反映されないときは、ブラウザ再読込を試してください。まだ出ない場合は 1〜2分待って再確認します。</div>
@@ -487,7 +487,7 @@
     <h2 class="section">確認用URL</h2>
     <div class="step-block">
       <div class="step-title">確認ページ</div>
-      <div class="url-box">https://matsuba-commits.github.io/nishisumi/report.html</div>
+      <div class="url-box" data-page-url="report.html"></div>
       <div class="point">report.html → 活動報告ページ本体</div>
       <div class="point">admin.html → 現在どのデータ元を読んでいるかの確認ページ</div>
       <div class="point">index.html → トップページ上の最新表示確認</div>
@@ -504,6 +504,15 @@
     </div>
 
   </div>
+  <script>
+    document.querySelectorAll('[data-page-url]').forEach((element) => {
+      const page = element.getAttribute('data-page-url');
+      if (!page) return;
+
+      const url = new URL(page, window.location.href);
+      element.textContent = url.href;
+    });
+  </script>
 </body>
 
 </html>

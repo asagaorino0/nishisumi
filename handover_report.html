@@ -47,7 +47,7 @@
     <div class="card-title">🔗 URL・アカウント情報</div>
     <table>
       <tr><th>項目</th><th>内容</th></tr>
-      <tr><td>サイトURL</td><td><strong>https://matsuba-commits.github.io/nishisumi/</strong></td></tr>
+      <tr><td>サイトURL</td><td><strong data-current-dir></strong></td></tr>
       <tr><td>GitHubアカウント</td><td>matsuba-commits</td></tr>
       <tr><td>登録メール</td><td>matsuba@ma-pd.com</td></tr>
       <tr><td>リポジトリ名</td><td>nishisumi</td></tr>
@@ -108,7 +108,7 @@
       <div class="flow-num">4</div>
       <div>
         <div class="flow-title">サイトを確認する</div>
-        <div class="flow-text">https://matsuba-commits.github.io/nishisumi/ を開いて確認。反映されない場合はCtrl+Shift+Rでキャッシュクリア。</div>
+        <div class="flow-text"><span data-current-dir></span> を開いて確認。反映されない場合はCtrl+Shift+Rでキャッシュクリア。</div>
       </div>
     </div>
   </div>
@@ -148,5 +148,12 @@
   </div>
 
 </div>
+<script>
+  const currentDirectoryUrl = new URL('.', window.location.href).href;
+
+  document.querySelectorAll('[data-current-dir]').forEach((element) => {
+    element.textContent = currentDirectoryUrl;
+  });
+</script>
 </body>
 </html>
