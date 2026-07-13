@@ -163,7 +163,7 @@
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 18px;
-      margin-bottom: 32px;
+      /* margin-bottom: 32px; */
     }
 
     .summary-card {
@@ -804,27 +804,27 @@
       return formatReportDate(sorted[0].date);
     }
 
-    function renderSummary(items) {
-      const groupCount = items.filter((item) => item.category === 'group').length;
-      const uniqueCategories = new Set(items.map((item) => item.categoryLabel)).size;
-      summaryGrid.innerHTML = `
-      <div class="summary-card">
-        <div class="summary-label">REPORT COUNT</div>
-        <div class="summary-value">${items.length}<small>件</small></div>
-        <div class="summary-note">2026年度に掲載している活動報告の件数です。</div>
-      </div>
-      <div class="summary-card">
-        <div class="summary-label">LATEST UPDATE</div>
-        <div class="summary-value" style="font-size:20px; line-height:1.4;">${getLatestDate(items)}</div>
-        <div class="summary-note">新しい報告ほど上に表示される構成です。</div>
-      </div>
-      <div class="summary-card">
-        <div class="summary-label">CATEGORY BALANCE</div>
-        <div class="summary-value">${uniqueCategories}<small>分類</small></div>
-        <div class="summary-note">小グループ会 ${groupCount}件を中心に、支部行事や勉強会も掲載しています。</div>
-      </div>
-    `;
-    }
+    // function renderSummary(items) {
+    //   const groupCount = items.filter((item) => item.category === 'group').length;
+    //   const uniqueCategories = new Set(items.map((item) => item.categoryLabel)).size;
+    //   summaryGrid.innerHTML = `
+    //   <div class="summary-card">
+    //     <div class="summary-label">REPORT COUNT</div>
+    //     <div class="summary-value">${items.length}<small>件</small></div>
+    //     <div class="summary-note">2026年度に掲載している活動報告の件数です。</div>
+    //   </div>
+    //   <div class="summary-card">
+    //     <div class="summary-label">LATEST UPDATE</div>
+    //     <div class="summary-value" style="font-size:20px; line-height:1.4;">${getLatestDate(items)}</div>
+    //     <div class="summary-note">新しい報告ほど上に表示される構成です。</div>
+    //   </div>
+    //   <div class="summary-card">
+    //     <div class="summary-label">CATEGORY BALANCE</div>
+    //     <div class="summary-value">${uniqueCategories}<small>分類</small></div>
+    //     <div class="summary-note">小グループ会 ${groupCount}件を中心に、支部行事や勉強会も掲載しています。</div>
+    //   </div>
+    // `;
+    // }
 
     function renderFilters(items) {
       const counts = items.reduce((acc, item) => {
@@ -948,7 +948,7 @@
           : await loadReportsFromJson(config.fallbackReportsUrl);
         currentReports = sortReports(reports);
         activeFilter = 'all';
-        renderSummary(currentReports);
+        // renderSummary(currentReports);
         renderFilters(currentReports);
         renderReports(currentReports);
       } catch (error) {
