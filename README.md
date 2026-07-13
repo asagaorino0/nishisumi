@@ -50,8 +50,11 @@ python3 -m http.server 8000
 4. `data/site-config.json` の `sheetCsvUrl` にその URL を設定する
 5. グループ紹介もシート管理したい場合は、別シートを CSV としてウェブ公開する
 6. `data/site-config.json` の `groupSheetCsvUrl` にその URL を設定する
-7. 活動報告もシート管理したい場合は、別シートを CSV としてウェブ公開する
-8. `data/site-config.json` の `reportSheetCsvUrl` にその URL を設定する
+7. グループごとのメンバー一覧を別シートで管理する場合は、各シートを CSV 公開して `groupMemberSheetCsvUrls.G1` 〜 `G4` に設定する
+8. 公開URLで安定して読みたい場合は、各タブの `gid` を `groupMemberSheetGids.G1` 〜 `G4` に設定する
+9. もしくは同じスプレッドシート内に `グループ G1` 〜 `グループ G4` シートがある場合は、`spreadsheetEditUrl` と `groupMemberSheetNames` を設定する
+10. 活動報告もシート管理したい場合は、別シートを CSV としてウェブ公開する
+11. `data/site-config.json` の `reportSheetCsvUrl` にその URL を設定する
 
 ### Google スプレッドシート公開URLの取り方
 
@@ -70,6 +73,25 @@ python3 -m http.server 8000
   "sheetCsvUrl": "https://docs.google.com/spreadsheets/d/XXXXX/pub?output=csv",
   "fallbackJsonUrl": "./data/events.json",
   "groupSheetCsvUrl": "https://docs.google.com/spreadsheets/d/XXXXX/pub?gid=123456789&single=true&output=csv",
+  "groupMemberSheetCsvUrls": {
+    "G1": "https://docs.google.com/spreadsheets/d/XXXXX/pub?gid=111111111&single=true&output=csv",
+    "G2": "https://docs.google.com/spreadsheets/d/XXXXX/pub?gid=222222222&single=true&output=csv",
+    "G3": "https://docs.google.com/spreadsheets/d/XXXXX/pub?gid=333333333&single=true&output=csv",
+    "G4": "https://docs.google.com/spreadsheets/d/XXXXX/pub?gid=444444444&single=true&output=csv"
+  },
+  "groupMemberSheetGids": {
+    "G1": "111111111",
+    "G2": "222222222",
+    "G3": "333333333",
+    "G4": "444444444"
+  },
+  "groupMemberSheetNames": {
+    "G1": "グループ G1",
+    "G2": "グループ G2",
+    "G3": "グループ G3",
+    "G4": "グループ G4"
+  },
+  "spreadsheetEditUrl": "https://docs.google.com/spreadsheets/d/XXXXX/edit",
   "fallbackGroupsUrl": "./data/groups.json",
   "reportSheetCsvUrl": "https://docs.google.com/spreadsheets/d/XXXXX/pub?gid=987654321&single=true&output=csv",
   "fallbackReportsUrl": "./data/reports.json",
@@ -102,6 +124,9 @@ python3 -m http.server 8000
 - `admin.html` で現在どのデータ元を読んでいるか確認できます
 - `group` は `G1` 〜 `G4`、`round` は `1` 〜 `4` を入れると `group.html` の予定欄にも反映されます
 - グループ紹介シートの列は `group` / `number` / `name` / `leader` / `memberCount` / `manager` / `visible` を使えます
+- グループカードにメンバーを表示する標準方法は、公開中のグループ紹介シートに `memberNames` または `メンバー一覧` 列を追加して、改行や `、` 区切りで入力する運用です
+- グループごとのメンバーを別シートで管理する場合は、そのシート自体が公開CSVとして読める必要があります。`name` 列を `groupMemberSheetCsvUrls.G1` 〜 `G4` から参照できます。`氏名` / `名前` / `メンバー名` 列でも読めます
+- Google スプレッドシートの編集画面でタブが見えていても、そのタブが「ウェブに公開」されていなければ静的HTMLからは読めません
 - 活動報告シートの列は `date` / `category` / `title` / `text` / `place` / `keywords` / `imageUrl` / `imageAlt` / `visible` を使えます
 - 活動報告シートでは補助列として `driveShareUrl` / `imageFileId` / `previewImage` を追加しても大丈夫です。サイト側は余分な列を無視します
 - `reportDriveFolderUrl` は「画像をアップロードするDriveフォルダを開くためのURL」です。サイトから直接保存はしません
