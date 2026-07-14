@@ -219,6 +219,39 @@
       margin-top: 6px;
     }
 
+    .group-leader-button {
+      appearance: none;
+      border: none;
+      background: transparent;
+      color: inherit;
+      font: inherit;
+      padding: 0;
+      cursor: pointer;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+
+    .group-leader-button:hover {
+      opacity: 0.9;
+    }
+
+    .group-manager-button {
+      appearance: none;
+      border: none;
+      background: transparent;
+      color: inherit;
+      font: inherit;
+      font-weight: inherit;
+      padding: 0;
+      cursor: pointer;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+
+    .group-manager-button:hover {
+      opacity: 0.9;
+    }
+
     .group-card-body {
       padding: 20px;
       display: flex;
@@ -301,6 +334,9 @@
       border-radius: 8px;
       padding: 12px;
       font-size: 12px;
+      min-height: 156px;
+      display: flex;
+      flex-direction: column;
     }
 
     .group-next-label {
@@ -901,10 +937,10 @@
       fallbackGroupsUrl: './data/groups.json'
     };
     const defaultGroupCards = {
-      G1: { number: 'GROUP 1', name: 'グループ1', leader: '宮高 豪', memberCount: '約20名', manager: '－', members: [], memberDetails: [], memberTotalCount: 0, leaderCount: 0 },
-      G2: { number: 'GROUP 2', name: 'グループ2', leader: '松塲 謙一', memberCount: '22名', manager: '濵中・牛丸', members: [], memberDetails: [], memberTotalCount: 0, leaderCount: 0 },
-      G3: { number: 'GROUP 3', name: 'グループ3', leader: '松浦 貴嗣', memberCount: '約20名', manager: '中村 俊介', members: [], memberDetails: [], memberTotalCount: 0, leaderCount: 0 },
-      G4: { number: 'GROUP 4', name: 'グループ4', leader: '清水 修吉', memberCount: '約20名', manager: '－', members: [], memberDetails: [], memberTotalCount: 0, leaderCount: 0 }
+      G1: { number: 'GROUP 1', name: 'グループ1', leader: '宮高 豪', leaderDetail: null, memberCount: '約20名', manager: '－', managerDetails: [], members: [], memberDetails: [], memberTotalCount: 0, leaderCount: 0 },
+      G2: { number: 'GROUP 2', name: 'グループ2', leader: '松塲 謙一', leaderDetail: null, memberCount: '22名', manager: '濵中・牛丸', managerDetails: [], members: [], memberDetails: [], memberTotalCount: 0, leaderCount: 0 },
+      G3: { number: 'GROUP 3', name: 'グループ3', leader: '松浦 貴嗣', leaderDetail: null, memberCount: '約20名', manager: '中村 俊介', managerDetails: [], members: [], memberDetails: [], memberTotalCount: 0, leaderCount: 0 },
+      G4: { number: 'GROUP 4', name: 'グループ4', leader: '清水 修吉', leaderDetail: null, memberCount: '約20名', manager: '－', managerDetails: [], members: [], memberDetails: [], memberTotalCount: 0, leaderCount: 0 }
     };
     const groupMeta = {
       G1: { label: 'G1 宮高', badgeClass: 'g1-label' },
@@ -1211,6 +1247,12 @@
           const managerValue = pickValue(record, ['manager', 'organizer', '幹事']);
           const normalizedManagerValue = managerValue.toLowerCase();
           const isLeader = ['leader', 'リーダー'].includes(normalizedManagerValue);
+          const isManager = !!(
+            name
+            && managerValue
+            && !isLeader
+            && !['0', 'false', 'no', 'off', '×', '-', 'ー'].includes(normalizedManagerValue)
+          );
 
           if (name) {
             acc.allMembers.push(name);
@@ -1219,6 +1261,7 @@
           if (
             name
             && !isLeader
+            && !isManager
           ) {
             acc.members.push(name);
             acc.memberDetails.push({ name, kana, company, userDirectoryUrl });
@@ -1226,26 +1269,29 @@
 
           if (name && isLeader) {
             acc.leaderCount += 1;
+            if (!acc.leaderDetail) {
+              acc.leaderDetail = { name, kana, company, userDirectoryUrl };
+            }
           }
 
-          if (
-            name
-            && managerValue
-            && !isLeader
-            && !['0', 'false', 'no', 'off', '×', '-', 'ー'].includes(normalizedManagerValue)
-          ) {
+          if (isManager) {
             acc.managers.push(name);
+            acc.managerDetails.push({ name, kana, company, userDirectoryUrl });
           }
 
           return acc;
-        }, { members: [], memberDetails: [], managers: [], allMembers: [], leaderCount: 0 });
+        }, { members: [], memberDetails: [], managers: [], managerDetails: [], allMembers: [], leaderCount: 0, leaderDetail: null });
 
       return {
         members: roster.members,
         memberDetails: roster.memberDetails,
         managers: [...new Set(roster.managers)],
-        memberTotalCount: roster.members.length + roster.leaderCount,
-        leaderCount: roster.leaderCount
+        managerDetails: roster.managerDetails.filter((manager, index, array) =>
+          array.findIndex((item) => item.name === manager.name) === index
+        ),
+        memberTotalCount: roster.members.length + roster.leaderCount + [...new Set(roster.managers)].length,
+        leaderCount: roster.leaderCount,
+        leaderDetail: roster.leaderDetail
       };
     }
 
@@ -1626,6 +1672,10 @@
       const memberDetails = Array.isArray(groupInfo.memberDetails) && groupInfo.memberDetails.length
         ? groupInfo.memberDetails
         : members.map((member) => ({ name: member, kana: '', company: '', userDirectoryUrl: '' }));
+      const leaderDetail = groupInfo.leaderDetail && groupInfo.leaderDetail.name
+        ? groupInfo.leaderDetail
+        : { name: groupInfo.leader || '', kana: '', company: '', userDirectoryUrl: '' };
+      const managerDetails = Array.isArray(groupInfo.managerDetails) ? groupInfo.managerDetails : [];
       const totalMembers = Number(groupInfo.memberTotalCount || 0);
       const memberCountText = totalMembers > 0
         ? `${totalMembers}名`
@@ -1638,13 +1688,28 @@
         nameNode.textContent = groupInfo.name || '';
       }
       if (leaderNode) {
-        leaderNode.textContent = `リーダー：${groupInfo.leader || '未設定'}`;
+        const leaderName = leaderDetail.name || '未設定';
+        leaderNode.innerHTML = `リーダー：<button type="button" class="group-leader-button" data-role="leader-link" data-member-name="${escapeHtml(leaderName)}" data-member-kana="${escapeHtml(leaderDetail.kana || '')}" data-member-company="${escapeHtml(leaderDetail.company || '')}" data-member-directory-url="${escapeHtml(leaderDetail.userDirectoryUrl || '')}">${escapeHtml(leaderName)}</button>`;
       }
       if (memberCountNode) {
         memberCountNode.textContent = memberCountText || '－';
       }
       if (managerNode) {
-        managerNode.textContent = groupInfo.manager || '－';
+        if (managerDetails.length) {
+          managerNode.innerHTML = managerDetails.map((manager) => `
+            <button
+              type="button"
+              class="group-manager-button"
+              data-role="manager-link"
+              data-member-name="${escapeHtml(manager.name)}"
+              data-member-kana="${escapeHtml(manager.kana || '')}"
+              data-member-company="${escapeHtml(manager.company || '')}"
+              data-member-directory-url="${escapeHtml(manager.userDirectoryUrl || '')}"
+            >${escapeHtml(manager.name)}</button>
+          `).join('・');
+        } else {
+          managerNode.textContent = groupInfo.manager || '－';
+        }
       }
       if (memberListNode) {
         if (members.length) {
@@ -1791,6 +1856,13 @@
           if (memberData && memberData.leaderCount) {
             mergedGroupInfo.leaderCount = memberData.leaderCount;
           }
+          if (memberData && memberData.leaderDetail && memberData.leaderDetail.name) {
+            mergedGroupInfo.leader = memberData.leaderDetail.name;
+            mergedGroupInfo.leaderDetail = memberData.leaderDetail;
+          }
+          if (memberData && memberData.managerDetails && memberData.managerDetails.length) {
+            mergedGroupInfo.managerDetails = memberData.managerDetails;
+          }
           if (memberData && memberData.managers.length) {
             mergedGroupInfo.manager = memberData.managers.join('・');
           }
@@ -1811,13 +1883,13 @@
     }
 
     document.addEventListener('click', (event) => {
-      const chip = event.target.closest('.group-member-chip');
-      if (chip) {
+      const memberTrigger = event.target.closest('.group-member-chip, [data-role="leader-link"], [data-role="manager-link"]');
+      if (memberTrigger) {
         openMemberDialog(
-          chip.dataset.memberName || '',
-          chip.dataset.memberKana || '',
-          chip.dataset.memberCompany || '',
-          chip.dataset.memberDirectoryUrl || ''
+          memberTrigger.dataset.memberName || '',
+          memberTrigger.dataset.memberKana || '',
+          memberTrigger.dataset.memberCompany || '',
+          memberTrigger.dataset.memberDirectoryUrl || ''
         );
         return;
       }
