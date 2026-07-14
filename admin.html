@@ -477,10 +477,16 @@
               <td><code>1</code></td>
             </tr>
             <tr>
-              <td>詳細</td>
-              <td><code>detail</code></td>
-              <td><code>詳細</code></td>
-              <td>墨の絵会館 18:30〜21:30</td>
+              <td>場所</td>
+              <td><code>place</code></td>
+              <td><code>場所</code></td>
+              <td>墨の絵会館</td>
+            </tr>
+            <tr>
+              <td>時間</td>
+              <td><code>time</code></td>
+              <td><code>時間</code></td>
+              <td><code>18:30〜21:30</code></td>
             </tr>
             <tr>
               <td>リンクURL</td>
@@ -690,7 +696,9 @@
             group: pickValue(record, ['group', 'グループ', '小グループ']),
             round: pickValue(record, ['round', '回']),
             title: pickValue(record, ['title', 'タイトル']),
-            detail: pickValue(record, ['detail', '詳細']),
+            place: pickValue(record, ['place', '場所']),
+            time: pickValue(record, ['time', '時間']),
+            detail: pickValue(record, ['detail', '詳細', 'place', '場所']),
             url: pickValue(record, ['url', 'e.doyu_url', 'リンクurl', 'linkurl', 'リンク']),
             linkLabel: pickValue(record, ['linklabel', 'リンク文字', 'button', 'ボタン文字'])
           };
@@ -710,7 +718,7 @@
         <div class="event-date">${escapeHtml(event.date)}</div>
         <div class="event-title">${escapeHtml(event.title)}</div>
         <div class="event-meta">${escapeHtml(event.category || '')}</div>
-        <div class="event-meta">${escapeHtml(event.detail || '')}</div>
+        <div class="event-meta">${escapeHtml(event.place || event.detail || '')}${event.time ? ` ${escapeHtml(event.time)}` : ''}</div>
         <div class="event-meta">${event.url ? escapeHtml(event.url) : 'リンクなし'}</div>
       </article>
     `).join('');

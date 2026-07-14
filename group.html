@@ -1139,7 +1139,9 @@
             group: pickValue(record, ['group', 'グループ', '小グループ']),
             round: pickValue(record, ['round', '回']),
             title: pickValue(record, ['title', 'タイトル']),
-            detail: pickValue(record, ['detail', '詳細']),
+            place: pickValue(record, ['place', '場所']),
+            time: pickValue(record, ['time', '時間']),
+            detail: pickValue(record, ['detail', '詳細', 'place', '場所']),
             url: pickValue(record, ['url', 'e.doyu_url', 'リンクurl', 'linkurl', 'リンク']),
             linkLabel: pickValue(record, ['linklabel', 'リンク文字', 'button', 'ボタン文字'])
           };
@@ -1656,6 +1658,23 @@
       return match ? match[1] : '';
     }
 
+    function getEventTime(event) {
+      return String(event.time || '').trim() || extractTime(event.detail);
+    }
+
+    function getEventPlace(event) {
+      const explicitPlace = String(event.place || '').trim();
+      if (explicitPlace) {
+        return explicitPlace;
+      }
+      const detail = String(event.detail || '').trim();
+      const time = getEventTime(event);
+      if (!detail || !time) {
+        return detail;
+      }
+      return detail.replace(time, '').replace(/\s{2,}/g, ' ').trim();
+    }
+
     function isUpcoming(event) {
       const date = parseDate(event.date);
       return date && date.getTime() >= today.getTime();
@@ -1780,9 +1799,10 @@
 
       const upcoming = isUpcoming(event);
       const label = upcoming ? 'NEXT ▶' : '✅ 開催済';
-      const time = extractTime(event.detail);
+      const time = getEventTime(event);
+      const place = getEventPlace(event);
       const dateText = `${formatJapaneseDate(event.date)}${time ? ` ${time}` : ''}`;
-      const theme = event.detail || event.title;
+      const theme = place || event.detail || event.title;
       const buttonLabel = escapeHtml(getEventLinkLabel(event, upcoming));
       const buttonClass = upcoming ? 'edoyu-btn gold' : 'edoyu-btn';
       const button = event.url

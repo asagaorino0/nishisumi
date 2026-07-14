@@ -228,6 +228,37 @@
     return Number.isNaN(date.getTime()) ? null : date;
   }
 
+  function extractTime(value) {
+    const match = String(value || '').match(/(\d{1,2}:\d{2}[〜\-]\d{1,2}:\d{2})/);
+    return match ? match[1] : '';
+  }
+
+  function getEventTime(event) {
+    return String(event.time || '').trim() || extractTime(event.detail);
+  }
+
+  function getEventPlace(event) {
+    const explicitPlace = String(event.place || '').trim();
+    if (explicitPlace) {
+      return explicitPlace;
+    }
+    const detail = String(event.detail || '').trim();
+    const time = getEventTime(event);
+    if (!detail || !time) {
+      return detail;
+    }
+    return detail.replace(time, '').replace(/\s{2,}/g, ' ').trim();
+  }
+
+  function formatEventDetail(event) {
+    const place = getEventPlace(event);
+    const time = getEventTime(event);
+    if (place && time) {
+      return `${place} ${time}`;
+    }
+    return place || time || String(event.detail || '').trim();
+  }
+
   function inferGroup(record) {
     const value = String(record.group || '').trim().toUpperCase();
     if (['G1', 'G2', 'G3', 'G4'].includes(value)) {
@@ -389,7 +420,9 @@
           category: pickValue(record, ['category', '区分', '種別']),
           group: pickValue(record, ['group', 'グループ', '小グループ']),
           title: pickValue(record, ['title', 'タイトル']),
-          detail: pickValue(record, ['detail', '詳細']),
+          place: pickValue(record, ['place', '場所']),
+          time: pickValue(record, ['time', '時間']),
+          detail: pickValue(record, ['detail', '詳細', 'place', '場所']),
           url: pickValue(record, ['url', 'e.doyu_url', 'リンクurl', 'linkurl', 'リンク']),
           linkLabel: pickValue(record, ['linklabel', 'リンク文字', 'button', 'ボタン文字'])
         };
@@ -432,7 +465,8 @@
           ? rawTitle.replace('支部例会', `支部例会 ${scheduleIndex}`)
           : `${rawTitle} ${scheduleIndex}`.trim())
         : rawTitle;
-      const detail = event.detail ? `<div class="event-detail">${escapeHtml(event.detail)}</div>` : '';
+      const detailText = formatEventDetail(event);
+      const detail = detailText ? `<div class="event-detail">${escapeHtml(detailText)}</div>` : '';
       const link = event.url
         ? `<a href="${escapeHtml(event.url)}" class="event-link" target="_blank" rel="noopener noreferrer">${escapeHtml(getEventLinkLabel(event))}</a>`
         : '';
