@@ -1,3 +1,3 @@
-date,category,group,round,title,detail,url,visible
+年月日,種別,小グループ,round,タイトル,詳細,e.doyu_url,表示
 2026-06-10,小グループ会,G2,1,G2小グループ会 第1回,墨の絵会館 18:30〜21:30,https://example.com,TRUE
 2026-06-15,支部例会,,,6月支部例会,会場名 18:30〜21:00,https://example.com,TRUE

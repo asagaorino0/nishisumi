@@ -449,13 +449,13 @@
             <tr>
               <td>日付</td>
               <td><code>date</code></td>
-              <td><code>日付</code></td>
+              <td><code>年月日</code></td>
               <td><code>2026-06-10</code></td>
             </tr>
             <tr>
               <td>区分</td>
               <td><code>category</code></td>
-              <td><code>区分</code></td>
+              <td><code>種別</code></td>
               <td>小グループ会</td>
             </tr>
             <tr>
@@ -467,7 +467,7 @@
             <tr>
               <td>グループ</td>
               <td><code>group</code></td>
-              <td><code>グループ</code></td>
+              <td><code>小グループ</code></td>
               <td><code>G2</code></td>
             </tr>
             <tr>
@@ -485,13 +485,13 @@
             <tr>
               <td>リンクURL</td>
               <td><code>url</code></td>
-              <td><code>リンクURL</code></td>
+              <td><code>e.doyu_url</code></td>
               <td>https://example.com</td>
             </tr>
             <tr>
               <td>公開可否</td>
               <td><code>visible</code></td>
-              <td><code>公開</code></td>
+              <td><code>表示</code></td>
               <td><code>TRUE</code> / <code>FALSE</code></td>
             </tr>
           </tbody>
@@ -679,19 +679,19 @@
             record[header] = row[index] ?? '';
           });
 
-          const visible = pickValue(record, ['visible', '公開']);
+          const visible = pickValue(record, ['visible', '公開', '表示']);
           if (visible && ['0', 'false', 'no', '非公開'].includes(visible.toLowerCase())) {
             return null;
           }
 
           return {
-            date: pickValue(record, ['date', '日付']),
-            category: pickValue(record, ['category', '区分']),
-            group: pickValue(record, ['group', 'グループ']),
+            date: pickValue(record, ['date', '日付', '年月日']),
+            category: pickValue(record, ['category', '区分', '種別']),
+            group: pickValue(record, ['group', 'グループ', '小グループ']),
             round: pickValue(record, ['round', '回']),
             title: pickValue(record, ['title', 'タイトル']),
             detail: pickValue(record, ['detail', '詳細']),
-            url: pickValue(record, ['url', 'リンクurl', 'linkurl', 'リンク']),
+            url: pickValue(record, ['url', 'e.doyu_url', 'リンクurl', 'linkurl', 'リンク']),
             linkLabel: pickValue(record, ['linklabel', 'リンク文字', 'button', 'ボタン文字'])
           };
         })

@@ -45,7 +45,7 @@ python3 -m http.server 8000
 初回セットアップ:
 
 1. Google スプレッドシートを作成する
-2. イベント列を用意する（`date` / `category` / `group` / `round` / `title` / `detail` / `url` / `visible`）
+2. イベント列を用意する（`年月日` / `種別` / `小グループ` / `round` / `タイトル` / `詳細` / `e.doyu_url` / `表示`）
 3. イベント用シートを CSV としてウェブ公開する
 4. `data/site-config.json` の `sheetCsvUrl` にその URL を設定する
 5. グループ紹介もシート管理したい場合は、別シートを CSV としてウェブ公開する

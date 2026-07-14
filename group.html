@@ -1128,19 +1128,19 @@
             record[header] = row[index] ?? '';
           });
 
-          const visible = pickValue(record, ['visible', '公開']);
+          const visible = pickValue(record, ['visible', '公開', '表示']);
           if (visible && ['0', 'false', 'no', '非公開'].includes(visible.toLowerCase())) {
             return null;
           }
 
           const item = {
-            date: pickValue(record, ['date', '日付']),
-            category: pickValue(record, ['category', '区分']),
-            group: pickValue(record, ['group', 'グループ']),
+            date: pickValue(record, ['date', '日付', '年月日']),
+            category: pickValue(record, ['category', '区分', '種別']),
+            group: pickValue(record, ['group', 'グループ', '小グループ']),
             round: pickValue(record, ['round', '回']),
             title: pickValue(record, ['title', 'タイトル']),
             detail: pickValue(record, ['detail', '詳細']),
-            url: pickValue(record, ['url', 'リンクurl', 'linkurl', 'リンク']),
+            url: pickValue(record, ['url', 'e.doyu_url', 'リンクurl', 'linkurl', 'リンク']),
             linkLabel: pickValue(record, ['linklabel', 'リンク文字', 'button', 'ボタン文字'])
           };
 
