@@ -427,9 +427,8 @@
             <div class="step-title">以後の更新はシートだけ</div>
             <div>担当者はイベント一覧シート、グループ紹介シート、活動報告シートを更新するだけでよく、GitHub 側の更新作業は不要です。</div>
             <div style="margin-top:6px;color:var(--gray);">活動報告の画像はシートに直接挿入せず、Drive共有リンクを <span
-                class="inline-code">driveShareUrl</span> に貼ってください。テンプレートの式で <span class="inline-code">imageUrl</span> を
-              <span class="inline-code">https://drive.google.com/thumbnail?id=FILE_ID&sz=w1600</span> 形式で自動生成し、プレビューは <span
-                class="inline-code">imageFileId</span> から直接表示します。Drive 側はリンク共有を有効にしてください。
+                class="inline-code">画像Url</span> に貼ってください。活動報告ページはその共有リンクから画像を表示できます。テンプレートの <span
+                class="inline-code">プレビュー</span> 列を使うと、スプレッドシート上でも確認できます。Drive 側はリンク共有を有効にしてください。
             </div>
           </div>
         </div>
@@ -495,10 +494,10 @@
               <td>https://example.com</td>
             </tr>
             <tr>
-              <td>公開可否</td>
-              <td><code>visible</code></td>
-              <td><code>表示</code></td>
-              <td><code>TRUE</code> / <code>FALSE</code></td>
+              <td>直近イベント案内</td>
+              <td><code>latestGuideVisible</code></td>
+              <td><code>直近のイベント案内表示</code></td>
+              <td><code>公開</code> / <code>非公開</code></td>
             </tr>
           </tbody>
         </table>
@@ -548,8 +547,8 @@
 
             <div class="step">
               <div class="step-num">3</div>
-              <div class="step-title">更新用スプレットシートを開く</div>
-              <div class="step-text">写真を入れたいイベントのG列（ <span class="inline-code">driveShareUrl</span>）をクリック。</div>
+              <div class="step-title">更新用スプレッドシートを開く</div>
+              <div class="step-text">写真を入れたい活動報告のF列（ <span class="inline-code">画像Url</span>）をクリックします。</div>
               <div class="step-action">
                 <a id="open-report-sheet" class="btn accent" href="#" target="_blank"
                   rel="noopener noreferrer">更新用スプレットシートを開く</a>
@@ -658,6 +657,23 @@
       return '';
     }
 
+    function isLatestGuideVisible(record) {
+      const guideVisible = pickValue(record, [
+        'latestGuideVisible',
+        'guideVisible',
+        '直近のイベント案内表示',
+        '表示',
+        'visible',
+        '公開'
+      ]);
+
+      if (!guideVisible) {
+        return true;
+      }
+
+      return ['公開', 'true', '1', 'yes'].includes(guideVisible.toLowerCase());
+    }
+
     function escapeAttribute(value) {
       return escapeHtml(value).replace(/`/g, '&#96;');
     }
@@ -685,11 +701,6 @@
             record[header] = row[index] ?? '';
           });
 
-          const visible = pickValue(record, ['visible', '公開', '表示']);
-          if (visible && ['0', 'false', 'no', '非公開'].includes(visible.toLowerCase())) {
-            return null;
-          }
-
           return {
             date: pickValue(record, ['date', '日付', '年月日']),
             category: pickValue(record, ['category', '区分', '種別']),
@@ -700,7 +711,8 @@
             time: pickValue(record, ['time', '時間']),
             detail: pickValue(record, ['detail', '詳細', 'place', '場所']),
             url: pickValue(record, ['url', 'e.doyu_url', 'リンクurl', 'linkurl', 'リンク']),
-            linkLabel: pickValue(record, ['linklabel', 'リンク文字', 'button', 'ボタン文字'])
+            linkLabel: pickValue(record, ['linklabel', 'リンク文字', 'button', 'ボタン文字']),
+            latestGuideVisible: isLatestGuideVisible(record)
           };
         })
         .filter((item) => item && item.date && item.title)

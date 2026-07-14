@@ -395,6 +395,23 @@
     return '';
   }
 
+  function isLatestGuideVisible(record) {
+    const guideVisible = pickValue(record, [
+      'latestGuideVisible',
+      'guideVisible',
+      '直近のイベント案内表示',
+      '表示',
+      'visible',
+      '公開'
+    ]);
+
+    if (!guideVisible) {
+      return true;
+    }
+
+    return ['公開', 'true', '1', 'yes'].includes(guideVisible.toLowerCase());
+  }
+
   function csvRowsToEvents(rows) {
     if (!Array.isArray(rows) || rows.length < 2) {
       return [];
@@ -409,11 +426,6 @@
           record[header] = row[index] ?? '';
         });
 
-        const visible = pickValue(record, ['visible', '公開', '表示']);
-        if (visible && ['0', 'false', 'no', '非公開'].includes(visible.toLowerCase())) {
-          return null;
-        }
-
         return {
           date: pickValue(record, ['date', '日付', '年月日']),
           index: pickValue(record, ['index', 'インデックス']),
@@ -424,7 +436,8 @@
           time: pickValue(record, ['time', '時間']),
           detail: pickValue(record, ['detail', '詳細', 'place', '場所']),
           url: pickValue(record, ['url', 'e.doyu_url', 'リンクurl', 'linkurl', 'リンク']),
-          linkLabel: pickValue(record, ['linklabel', 'リンク文字', 'button', 'ボタン文字'])
+          linkLabel: pickValue(record, ['linklabel', 'リンク文字', 'button', 'ボタン文字']),
+          latestGuideVisible: isLatestGuideVisible(record)
         };
       })
       .filter((item) => item && item.date && item.title)
@@ -439,6 +452,7 @@
       const rowKey = getScheduleRowKey(event);
       const scheduleIndex = String(event.index || '').trim();
       return date
+        && event.latestGuideVisible
         && date.getTime() >= today.getTime()
         && date.getTime() <= upcomingLimit.getTime()
         && rowKey !== 'block'

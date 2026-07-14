@@ -45,7 +45,7 @@ python3 -m http.server 8000
 初回セットアップ:
 
 1. Google スプレッドシートを作成する
-2. イベント列を用意する（`年月日` / `種別` / `小グループ` / `round` / `タイトル` / `場所` / `時間` / `e.doyu_url` / `表示`）
+2. イベント列を用意する（`年月日` / `種別` / `小グループ` / `round` / `タイトル` / `場所` / `時間` / `e.doyu_url` / `直近のイベント案内表示`）
 3. イベント用シートを CSV としてウェブ公開する
 4. `data/site-config.json` の `sheetCsvUrl` にその URL を設定する
 5. グループ紹介もシート管理したい場合は、別シートを CSV としてウェブ公開する
@@ -55,6 +55,11 @@ python3 -m http.server 8000
 9. もしくは同じスプレッドシート内に `グループ G1` 〜 `グループ G4` シートがある場合は、`spreadsheetEditUrl` と `groupMemberSheetNames` を設定する
 10. 活動報告もシート管理したい場合は、別シートを CSV としてウェブ公開する
 11. `data/site-config.json` の `reportSheetCsvUrl` にその URL を設定する
+
+イベントシートの補足:
+
+- `直近のイベント案内表示` が `公開` の行だけが、トップページの「直近のイベント案内」に掲載されます
+- トップページの「2026年度 年間スケジュール」は、イベントシート内の全行を表示します
 
 ### Google スプレッドシート公開URLの取り方
 
@@ -114,7 +119,7 @@ python3 -m http.server 8000
 3. `report.html` で写真がないカードの `📸 写真をここに差し替え` を押す
 4. 別タブで `admin.html` の補助画面が開き、Driveアップロードとスプシ貼り付けの手順が表示される
 5. そこから Drive フォルダと活動報告スプシを開く
-6. Drive 共有リンクを `driveShareUrl`、写真説明文を `imageAlt` に貼る
+6. Drive 共有リンクを `画像Url`、写真説明文を `画像説明` に貼る
 
 補足:
 
@@ -127,12 +132,12 @@ python3 -m http.server 8000
 - グループカードにメンバーを表示する標準方法は、公開中のグループ紹介シートに `memberNames` または `メンバー一覧` 列を追加して、改行や `、` 区切りで入力する運用です
 - グループごとのメンバーを別シートで管理する場合は、そのシート自体が公開CSVとして読める必要があります。`name` 列を `groupMemberSheetCsvUrls.G1` 〜 `G4` から参照できます。`氏名` / `名前` / `メンバー名` 列でも読めます
 - Google スプレッドシートの編集画面でタブが見えていても、そのタブが「ウェブに公開」されていなければ静的HTMLからは読めません
-- 活動報告シートの列は `date` / `category` / `title` / `text` / `place` / `keywords` / `imageUrl` / `imageAlt` / `visible` を使えます
-- 活動報告シートでは補助列として `driveShareUrl` / `imageFileId` / `previewImage` を追加しても大丈夫です。サイト側は余分な列を無視します
+- 活動報告シートの列は `年月日` / `種別` / `タイトル` / `内容` / `タグ` / `画像Url` / `画像説明` / `プレビュー` / `公開/非公開` を使えます
+- 旧列名の `date` / `category` / `title` / `text` / `keywords` / `imageUrl` / `imageAlt` / `visible` でも引き続き読めます
 - `reportDriveFolderUrl` は「画像をアップロードするDriveフォルダを開くためのURL」です。サイトから直接保存はしません
 - `reportSheetEditUrl` は「活動報告シートの編集画面URL」です。公開CSVのURLとは別に、編集用URLを設定してください
-- 画像はシートに直接挿入せず、Drive の共有リンクを `driveShareUrl` に貼る運用がおすすめです。テンプレートの式で `imageFileId` と `imageUrl` を自動生成します。`imageUrl` は `https://drive.google.com/thumbnail?id=FILE_ID&sz=w1600` 形式がおすすめです
-- Drive 側は「リンクを知っている全員が閲覧可」にしてください。`imageUrl` には Markdown 形式の `[...](...)` ではなく、画像URLそのものを入れてください
-- `previewImage` は `imageUrl` ではなく `imageFileId` から直接生成すると安定します。テンプレートでは `=IMAGE("https://drive.google.com/thumbnail?id="&imageFileIdセル&"&sz=w1600")` を使っています
+- 画像はシートに直接挿入せず、Drive の共有リンクを `画像Url` に貼る運用がおすすめです。活動報告ページは共有リンクから Google Drive の画像IDを読み取り、そのまま表示できます
+- Drive 側は「リンクを知っている全員が閲覧可」にしてください。`画像Url` には Markdown 形式の `[...](...)` を入れても読めますが、通常は共有リンクそのものを入れる運用が簡単です
+- `プレビュー` は `画像Url` の共有リンクから自動生成できます。テンプレートでは `=IMAGE("https://drive.google.com/thumbnail?id="&...)` を使っています
 - `reports-sheet-template.csv` は 2行目に説明用の補助行が入っています。不要なら削除して構いません
 - ボタン文言は日付で自動切替します。`linkLabel` 列は不要です

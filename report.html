@@ -722,13 +722,13 @@
             record[header] = row[index] ?? '';
           });
 
-          const visible = pickValue(record, ['visible', '公開']);
+          const visible = pickValue(record, ['visible', '公開', '公開/非公開']);
           if (visible && ['0', 'false', 'no', '非公開'].includes(visible.toLowerCase())) {
             return null;
           }
 
-          const categoryLabel = pickValue(record, ['category', '区分']) || '活動報告';
-          const date = pickValue(record, ['date', '日付']);
+          const categoryLabel = pickValue(record, ['category', '区分', '種別']) || '活動報告';
+          const date = pickValue(record, ['date', '日付', '年月日']);
           const title = pickValue(record, ['title', 'タイトル']);
           return {
             id: pickValue(record, ['id', '識別子']) || `${date}__${title}`,
@@ -740,7 +740,7 @@
             place: pickValue(record, ['place', 'location', 'venue', '会場', '場所']),
             keywords: parseKeywords(pickValue(record, ['keywords', 'tags', 'キーワード', 'タグ'])),
             imageUrl: pickValue(record, ['imageurl', 'image', 'photo', '画像url', '写真url']),
-            imageAlt: pickValue(record, ['imagealt', 'alt', '画像alt', '代替テキスト'])
+            imageAlt: pickValue(record, ['imagealt', 'alt', '画像alt', '代替テキスト', '画像説明'])
           };
         })
         .filter((item) => item && item.date && item.title && item.text);
