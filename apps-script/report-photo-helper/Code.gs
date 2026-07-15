@@ -18,9 +18,9 @@ function doPost(e) {
     const params = (e && e.parameter) || {};
     const driveShareUrl = cleanString_(params.imageUrl);
     const imageAlt = cleanString_(params.imageAlt);
-    const reportId = cleanString_(params.reportId);
-    const reportDate = cleanString_(params.reportDate);
-    const reportTitle = cleanString_(params.reportTitle);
+    const reportId = normalizeReportMatchValue_(params.reportId);
+    const reportDate = normalizeReportMatchValue_(params.reportDate);
+    const reportTitle = normalizeReportMatchValue_(params.reportTitle);
 
     if (!driveShareUrl) {
       throw new Error('imageUrl が空です。');
@@ -95,13 +95,13 @@ function doPost(e) {
 
     const rowIndex = rows.findIndex(function (row) {
       if (reportIdColumn >= 0 && reportId) {
-        return cleanString_(row[reportIdColumn]) === reportId;
+        return normalizeReportMatchValue_(row[reportIdColumn]) === reportId;
       }
 
       return reportDateColumn >= 0
         && reportTitleColumn >= 0
-        && cleanString_(row[reportDateColumn]) === reportDate
-        && cleanString_(row[reportTitleColumn]) === reportTitle;
+        && normalizeReportMatchValue_(row[reportDateColumn]) === reportDate
+        && normalizeReportMatchValue_(row[reportTitleColumn]) === reportTitle;
     });
 
     if (rowIndex < 0) {
@@ -159,6 +159,12 @@ function doPost(e) {
 
 function cleanString_(value) {
   return String(value || '').trim();
+}
+
+function normalizeReportMatchValue_(value) {
+  return String(value || '')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 function normalizeHeader_(value) {

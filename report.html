@@ -731,7 +731,7 @@
           const date = pickValue(record, ['date', '日付', '年月日']);
           const title = pickValue(record, ['title', 'タイトル']);
           return {
-            id: pickValue(record, ['id', '識別子']) || `${date}__${title}`,
+            id: pickValue(record, ['id', '識別子']) || buildReportIdentifier(date, title),
             date,
             categoryLabel,
             category: normalizeCategoryKey(categoryLabel),
@@ -751,12 +751,14 @@
       return items
         .map((item) => {
           const categoryLabel = String(item.categoryLabel || item.category || '活動報告').trim();
+          const normalizedTitle = String(item.title || '').trim();
+          const normalizedDate = String(item.date || '').trim();
           return {
-            id: String(item.id || `${item.date || ''}__${item.title || ''}`).trim(),
-            date: String(item.date || '').trim(),
+            id: String(item.id || buildReportIdentifier(normalizedDate, normalizedTitle)).trim(),
+            date: normalizedDate,
             categoryLabel,
             category: normalizeCategoryKey(categoryLabel),
-            title: String(item.title || '').trim(),
+            title: normalizedTitle,
             text: String(item.text || item.body || item.detail || '').trim(),
             place: String(item.place || item.location || '').trim(),
             keywords: parseKeywords(item.keywords),
@@ -794,6 +796,16 @@
         throw new Error('Failed to fetch fallback reports.json');
       }
       return normalizeJsonReports(await response.json());
+    }
+
+    function normalizeReportMatchValue(value) {
+      return String(value || '')
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+
+    function buildReportIdentifier(date, title) {
+      return `${normalizeReportMatchValue(date)}__${normalizeReportMatchValue(title)}`;
     }
 
     function getLatestDate(items) {

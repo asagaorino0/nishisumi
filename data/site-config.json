@@ -21,5 +21,5 @@
   "fallbackReportsUrl": "./data/reports.json",
   "reportDriveFolderUrl": "https://drive.google.com/drive/folders/1avX6JcZfG9ADNrJGo_x_3K3idvViFPUd?usp=drive_link",
   "reportSheetEditUrl": "https://docs.google.com/spreadsheets/d/1urdx6tlczcddvSLl3brm7yjp0u8z2NcQ2pOMlybOxoc/edit?gid=163030588#gid=163030588",
-  "reportSheetWebhookUrl": "https://script.google.com/macros/s/AKfycbwOvVvVgj13ws6_pB5y6CJozVwD61xPWrNATOg42DqAnfxvx4VXUkXcMa_Nwkchk5fKdA/exec"
+  "reportSheetWebhookUrl": "https://script.google.com/macros/s/AKfycbxE94xvR8grLFy3sByVDqcnOoCdvLTHYw-wfyOY6SqmaELQb1peuLUw9FAJs8KFK5Rf/exec"
 }
