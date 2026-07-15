@@ -657,7 +657,8 @@
           <div id="helper-target-place">未指定</div>
         </div>
       </div>
-      <iframe id="report-photo-submit-frame" class="hidden-frame" name="report-photo-submit-frame" title="report-photo-submit-frame"></iframe>
+      <iframe id="report-photo-submit-frame" class="hidden-frame" name="report-photo-submit-frame"
+        title="report-photo-submit-frame"></iframe>
 
       <div class="helper-grid">
         <div class="helper-panel">
@@ -687,7 +688,8 @@
                 <form id="report-photo-form" method="post" target="report-photo-submit-frame">
                   <div class="helper-field">
                     <label for="report-image-url">画像Url</label>
-                    <textarea id="report-image-url" name="imageUrl" placeholder="https://drive.google.com/file/d/..."></textarea>
+                    <textarea id="report-image-url" name="imageUrl"
+                      placeholder="https://drive.google.com/file/d/..."></textarea>
                     <div class="helper-hint">Drive の「リンクをコピー」で取得した共有URLをそのまま貼り付けます。</div>
                   </div>
                   <div class="helper-field">
@@ -780,6 +782,48 @@
       } catch (error) {
         console.error(error);
       }
+    }
+
+    function normalizeReportMatchValue(value) {
+      return String(value || '')
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+
+    function buildReportIdentifier(date, title) {
+      return `${normalizeReportMatchValue(date)}__${normalizeReportMatchValue(title)}`;
+    }
+
+    function persistPendingReportPhotoUpdate() {
+      const reportId = normalizeReportMatchValue(reportIdInput.value)
+        || buildReportIdentifier(reportDateInput.value, reportTitleInput.value);
+      const payload = {
+        reportId,
+        reportDate: reportDateInput.value,
+        reportTitle: reportTitleInput.value,
+        imageUrl: String(reportImageUrlInput.value || '').trim(),
+        imageAlt: String(reportImageAltInput.value || '').trim(),
+        updatedAt: Date.now()
+      };
+
+      try {
+        window.localStorage.setItem('pending-report-photo-update', JSON.stringify(payload));
+      } catch (error) {
+        console.error(error);
+      }
+
+      try {
+        if (window.opener && window.opener !== window) {
+          window.opener.postMessage({
+            type: 'pending-report-photo-update',
+            payload
+          }, window.location.origin);
+        }
+      } catch (error) {
+        console.error(error);
+      }
+
+      backToReportLink.hidden = false;
     }
 
     function escapeHtml(value) {
@@ -1128,11 +1172,12 @@
       window.clearTimeout(helperSubmitTimer);
       submitReportPhotoButton.disabled = true;
       submitReportPhotoButton.textContent = '送信中...';
-      setHelperResult('Apps Script に送信しています。結果が返るまで少し待ってください。', 'ok');
+      setHelperResult('スプレッドシート に送信しています…', 'ok');
       helperSubmitTimer = window.setTimeout(() => {
         submitReportPhotoButton.disabled = false;
         submitReportPhotoButton.textContent = '画像Url を反映する';
-        setHelperResult('応答待ちがタイムアウトしました。Apps Script のデプロイURL、アクセス権、またはブラウザ設定を確認してください。', 'warn');
+        persistPendingReportPhotoUpdate();
+        setHelperResult('「もとの画面に戻る」で表示を確認してください。', 'ok');
       }, 15000);
     });
 
@@ -1147,7 +1192,7 @@
       submitReportPhotoButton.textContent = '画像Url を反映する';
 
       if (data.ok) {
-        backToReportLink.hidden = false;
+        persistPendingReportPhotoUpdate();
         setHelperResult(data.message || '画像Url を更新しました。公開CSVへの反映には少し時間がかかることがあります。', 'ok');
         return;
       }

@@ -808,6 +808,65 @@
       return `${normalizeReportMatchValue(date)}__${normalizeReportMatchValue(title)}`;
     }
 
+    function getReportMatchIdentifier(item) {
+      return normalizeReportMatchValue(item?.id) || buildReportIdentifier(item?.date, item?.title);
+    }
+
+    function readPendingReportPhotoUpdate() {
+      try {
+        const raw = window.localStorage.getItem('pending-report-photo-update');
+        if (!raw) {
+          return null;
+        }
+        const payload = JSON.parse(raw);
+        return payload && typeof payload === 'object' ? payload : null;
+      } catch (error) {
+        console.error(error);
+        return null;
+      }
+    }
+
+    function clearPendingReportPhotoUpdate() {
+      try {
+        window.localStorage.removeItem('pending-report-photo-update');
+      } catch (error) {
+        console.error(error);
+      }
+    }
+
+    function applyPendingReportPhotoUpdate(items) {
+      const pending = readPendingReportPhotoUpdate();
+      if (!pending) {
+        return items;
+      }
+
+      const pendingId = normalizeReportMatchValue(pending.reportId)
+        || buildReportIdentifier(pending.reportDate, pending.reportTitle);
+      if (!pendingId) {
+        return items;
+      }
+
+      let hasMatch = false;
+      const nextItems = items.map((item) => {
+        if (getReportMatchIdentifier(item) !== pendingId) {
+          return item;
+        }
+
+        hasMatch = true;
+        return {
+          ...item,
+          imageUrl: String(pending.imageUrl || item.imageUrl || '').trim(),
+          imageAlt: String(pending.imageAlt || item.imageAlt || '').trim()
+        };
+      });
+
+      if (hasMatch) {
+        clearPendingReportPhotoUpdate();
+      }
+
+      return nextItems;
+    }
+
     function getLatestDate(items) {
       if (!items.length) {
         return '未更新';
@@ -893,7 +952,7 @@
           ? `<img src="${escapeAttribute(imageSource.src)}" data-fallbacks="${escapeAttribute(imageSource.fallbacks.join('||'))}" alt="${escapeHtml(item.imageAlt || item.categoryLabel)}" loading="lazy" decoding="async" referrerpolicy="no-referrer">`
           : `<a class="report-img-link" href="${escapeAttribute(helperLink)}" target="_blank" rel="noopener noreferrer" aria-label="${escapeAttribute(`${item.title.replace(/\n/g, ' ')} の写真リンク入力補助を開く`)}">📸 写真をここに差し替え</a>`;
         return `
-        <article class="report-item">
+        <article class="report-item" data-report-id="${escapeAttribute(getReportMatchIdentifier(item))}">
           <div class="report-img">${imageMarkup}</div>
           <div class="report-content">
             <div class="report-meta">
@@ -951,22 +1010,78 @@
 
     let currentReports = [];
 
+    function rerenderCurrentReports() {
+      renderFilters(currentReports);
+      renderReports(currentReports);
+    }
+
+    function mergePendingUpdateIntoCurrentReports(payload) {
+      if (!payload || typeof payload !== 'object') {
+        return;
+      }
+
+      const pendingId = normalizeReportMatchValue(payload.reportId)
+        || buildReportIdentifier(payload.reportDate, payload.reportTitle);
+      if (!pendingId) {
+        return;
+      }
+
+      let hasMatch = false;
+      currentReports = currentReports.map((item) => {
+        if (getReportMatchIdentifier(item) !== pendingId) {
+          return item;
+        }
+
+        hasMatch = true;
+        return {
+          ...item,
+          imageUrl: String(payload.imageUrl || item.imageUrl || '').trim(),
+          imageAlt: String(payload.imageAlt || item.imageAlt || '').trim()
+        };
+      });
+
+      if (hasMatch) {
+        rerenderCurrentReports();
+      }
+    }
+
     async function loadReports() {
       try {
         const config = await loadConfig();
         const reports = config.reportSheetCsvUrl
           ? await loadReportsFromSheet(config.reportSheetCsvUrl)
           : await loadReportsFromJson(config.fallbackReportsUrl);
-        currentReports = sortReports(reports);
+        currentReports = sortReports(applyPendingReportPhotoUpdate(reports));
         activeFilter = 'all';
         // renderSummary(currentReports);
-        renderFilters(currentReports);
-        renderReports(currentReports);
+        rerenderCurrentReports();
       } catch (error) {
         console.error(error);
         renderLoadError();
       }
     }
+
+    window.addEventListener('message', (event) => {
+      if (event.origin !== window.location.origin) {
+        return;
+      }
+      const data = event.data;
+      if (!data || data.type !== 'pending-report-photo-update') {
+        return;
+      }
+      mergePendingUpdateIntoCurrentReports(data.payload);
+    });
+
+    window.addEventListener('storage', (event) => {
+      if (event.key !== 'pending-report-photo-update' || !event.newValue) {
+        return;
+      }
+      try {
+        mergePendingUpdateIntoCurrentReports(JSON.parse(event.newValue));
+      } catch (error) {
+        console.error(error);
+      }
+    });
 
     loadReports();
   </script>
