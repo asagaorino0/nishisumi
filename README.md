@@ -116,10 +116,10 @@ python3 -m http.server 8000
 
 1. `data/site-config.json` の `reportDriveFolderUrl` に画像保存先フォルダURLを入れる
 2. `data/site-config.json` の `reportSheetEditUrl` に活動報告シートの編集URLを入れる
-3. `report.html` で写真がないカードの `📸 写真をここに差し替え` を押す
-4. 別タブで `admin.html` の補助画面が開き、Driveアップロードとスプシ貼り付けの手順が表示される
-5. そこから Drive フォルダと活動報告スプシを開く
-6. Drive 共有リンクを `画像Url`、写真説明文を `画像説明` に貼る
+3. 全自動にしたい場合は、活動報告のスプレッドシートで `拡張機能` → `Apps Script` を開き、`apps-script/report-photo-helper/` の内容を貼り付けて Web アプリとしてデプロイし、そのURLを `data/site-config.json` の `reportSheetWebhookUrl` に入れる
+4. `report.html` で写真がないカードの `📸 写真をここに差し替え` を押す
+5. 別タブで `admin.html` の補助画面が開き、Driveアップロードと反映用フォームが表示される
+6. そこから Drive フォルダを開き、共有リンクを `画像Url` に貼って送信する
 
 補足:
 
@@ -132,12 +132,23 @@ python3 -m http.server 8000
 - グループカードにメンバーを表示する標準方法は、公開中のグループ紹介シートに `memberNames` または `メンバー一覧` 列を追加して、改行や `、` 区切りで入力する運用です
 - グループごとのメンバーを別シートで管理する場合は、そのシート自体が公開CSVとして読める必要があります。`name` 列を `groupMemberSheetCsvUrls.G1` 〜 `G4` から参照できます。`氏名` / `名前` / `メンバー名` 列でも読めます
 - Google スプレッドシートの編集画面でタブが見えていても、そのタブが「ウェブに公開」されていなければ静的HTMLからは読めません
-- 活動報告シートの列は `年月日` / `種別` / `タイトル` / `内容` / `タグ` / `画像Url` / `画像説明` / `プレビュー` / `公開/非公開` を使えます
+- 活動報告シートの列は `年月日` / `種別` / `タイトル` / `内容` / `タグ` / `画像Url` / `imageFileId` / `imageUrl` / `画像説明` / `previewImage` / `公開/非公開` を使えます
 - 旧列名の `date` / `category` / `title` / `text` / `keywords` / `imageUrl` / `imageAlt` / `visible` でも引き続き読めます
 - `reportDriveFolderUrl` は「画像をアップロードするDriveフォルダを開くためのURL」です。サイトから直接保存はしません
 - `reportSheetEditUrl` は「活動報告シートの編集画面URL」です。公開CSVのURLとは別に、編集用URLを設定してください
+- `reportSheetWebhookUrl` は「Apps Script と連携して `画像Url` を直接書き込む Web アプリURL」です。空なら、ヘルパー画面は手動貼り付け案内のまま動きます
 - 画像はシートに直接挿入せず、Drive の共有リンクを `画像Url` に貼る運用がおすすめです。活動報告ページは共有リンクから Google Drive の画像IDを読み取り、そのまま表示できます
 - Drive 側は「リンクを知っている全員が閲覧可」にしてください。`画像Url` には Markdown 形式の `[...](...)` を入れても読めますが、通常は共有リンクそのものを入れる運用が簡単です
-- `プレビュー` は `画像Url` の共有リンクから自動生成できます。テンプレートでは `=IMAGE("https://drive.google.com/thumbnail?id="&...)` を使っています
+- `imageFileId` / `imageUrl` / `previewImage` は補助列です。Apps Script から更新する場合は自動で入ります
+- `imageUrl` は `https://drive.google.com/thumbnail?id=画像ID&sz=w1600` の形式にしておくと、`previewImage` でそのまま使いやすいです
+- `previewImage` は `imageUrl` から自動生成できます。テンプレートでは `=IMAGE(H行)` の形を使っています
 - `reports-sheet-template.csv` は 2行目に説明用の補助行が入っています。不要なら削除して構いません
 - ボタン文言は日付で自動切替します。`linkLabel` 列は不要です
+
+Apps Script 連携メモ:
+
+- `apps-script/report-photo-helper/Code.gs` は、活動報告スプレッドシートに紐づいた Apps Script として使う前提です
+- 活動報告シートを開いて `拡張機能` → `Apps Script` から作成すると、同友会の Drive 運用に寄せやすくなります
+- 必要なら `sheetName` を活動報告タブ名に合わせて変更してください。空にするとアクティブシートを使います
+- Web アプリは「自分として実行」「リンクを知っている全員」が扱いやすい構成です
+- 行の特定は `識別子` 列があれば最優先で使い、なければ `年月日` + `タイトル` で照合します

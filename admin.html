@@ -264,6 +264,124 @@
       gap: 16px;
     }
 
+    .helper-target {
+      margin-top: 16px;
+      padding: 14px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: #f8fafc;
+    }
+
+    .helper-target h3 {
+      color: var(--primary);
+      font-size: 16px;
+      margin-bottom: 10px;
+    }
+
+    .helper-target-grid {
+      display: grid;
+      grid-template-columns: 120px 1fr;
+      gap: 8px 12px;
+      font-size: 14px;
+    }
+
+    .helper-target-label {
+      color: var(--gray);
+      font-weight: 700;
+    }
+
+    .helper-form {
+      margin-top: 16px;
+      padding: 16px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #fffdf9;
+    }
+
+    .helper-form h3 {
+      color: var(--primary);
+      font-size: 16px;
+      margin-bottom: 10px;
+    }
+
+    .step .helper-form {
+      margin-top: 0;
+      padding: 0;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+    }
+
+    .step .helper-form h3 {
+      font-weight: 700;
+      color: var(--primary);
+      font-size: 18px;
+      margin-bottom: 16px;
+    }
+
+    .helper-field {
+      margin-top: 12px;
+    }
+
+    .helper-field label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    .helper-field input,
+    .helper-field textarea {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 10px 12px;
+      font: inherit;
+      background: var(--white);
+      color: #333333;
+    }
+
+    .helper-field textarea {
+      min-height: 92px;
+      resize: vertical;
+    }
+
+    .helper-hint {
+      margin-top: 6px;
+      font-size: 12px;
+      color: var(--gray);
+    }
+
+    .helper-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 14px;
+      align-items: center;
+    }
+
+    .helper-result {
+      margin-top: 12px;
+      font-size: 13px;
+    }
+
+    .helper-result.ok {
+      color: var(--ok-text);
+    }
+
+    .helper-result.warn {
+      color: var(--warn-text);
+    }
+
+    .hidden-frame {
+      width: 0;
+      height: 0;
+      border: 0;
+      position: absolute;
+      left: -9999px;
+    }
+
     .field label {
       display: block;
       font-size: 13px;
@@ -524,6 +642,22 @@
       <h2>活動報告 写真設定補助</h2>
       <p class="lead">写真を追加するときは、この順番で進めてください。</p>
       <div id="helper-status" class="status warn">Drive フォルダURLとスプレッドシート編集URLを設定すると、この画面からすぐ開けます。</div>
+      <div id="helper-target" class="helper-target" hidden>
+        <h3>更新対象</h3>
+        <div class="helper-target-grid">
+          <div class="helper-target-label">識別子</div>
+          <div id="helper-target-id">未指定</div>
+          <div class="helper-target-label">年月日</div>
+          <div id="helper-target-date">未指定</div>
+          <div class="helper-target-label">タイトル</div>
+          <div id="helper-target-title">未指定</div>
+          <div class="helper-target-label">種別</div>
+          <div id="helper-target-category">未指定</div>
+          <div class="helper-target-label">場所</div>
+          <div id="helper-target-place">未指定</div>
+        </div>
+      </div>
+      <iframe id="report-photo-submit-frame" class="hidden-frame" name="report-photo-submit-frame" title="report-photo-submit-frame"></iframe>
 
       <div class="helper-grid">
         <div class="helper-panel">
@@ -545,20 +679,44 @@
               <div class="step-text">アップロードした画像を右クリックして、「共有」→「リンクをコピー」を押します。</div>
             </div>
 
-            <div class="step">
+            <div class="step" id="helper-form-panel" hidden>
               <div class="step-num">3</div>
-              <div class="step-title">更新用スプレッドシートを開く</div>
-              <div class="step-text">写真を入れたい活動報告のF列（ <span class="inline-code">画像Url</span>）をクリックします。</div>
-              <div class="step-action">
-                <a id="open-report-sheet" class="btn accent" href="#" target="_blank"
-                  rel="noopener noreferrer">更新用スプレットシートを開く</a>
+              <div class="helper-form">
+                <h3>この画面に共有リンクを貼って反映</h3>
+                <p class="lead" style="margin-bottom:0;">Drive の共有リンクをここに貼って送信すると、Apps Script 経由で活動報告シートの該当行を更新します。</p>
+                <form id="report-photo-form" method="post" target="report-photo-submit-frame">
+                  <div class="helper-field">
+                    <label for="report-image-url">画像Url</label>
+                    <textarea id="report-image-url" name="imageUrl" placeholder="https://drive.google.com/file/d/..."></textarea>
+                    <div class="helper-hint">Drive の「リンクをコピー」で取得した共有URLをそのまま貼り付けます。</div>
+                  </div>
+                  <div class="helper-field">
+                    <label for="report-image-alt">画像説明</label>
+                    <input id="report-image-alt" name="imageAlt" type="text" placeholder="集合写真、登壇中の様子 など">
+                    <div class="helper-hint">必要なときだけ入力してください。Apps Script 側で `画像説明` 列も更新できます。</div>
+                  </div>
+                  <input id="report-id-input" name="reportId" type="hidden">
+                  <input id="report-date-input" name="reportDate" type="hidden">
+                  <input id="report-title-input" name="reportTitle" type="hidden">
+                  <input id="report-category-input" name="reportCategory" type="hidden">
+                  <input id="report-place-input" name="reportPlace" type="hidden">
+                  <div class="helper-actions">
+                    <button id="submit-report-photo" class="btn primary" type="submit">この画面から反映する</button>
+                    <a id="back-to-report-link" class="btn" href="./report.html" hidden>もとの画面に戻る</a>
+                  </div>
+                </form>
+                <div id="helper-submit-result" class="helper-result"></div>
               </div>
             </div>
 
             <div class="step">
               <div class="step-num">4</div>
-              <div class="step-title">共有リンクを貼る</div>
-              <div class="step-text">❷でコピーした画像の共有リンクを、❸ に貼ります。</div>
+              <div class="step-title">うまく送れない時だけスプレッドシートを開く</div>
+              <div class="step-text">自動反映が使えない場合の予備手順です。活動報告のF列（ <span class="inline-code">画像Url</span>）を直接更新できます。</div>
+              <div class="step-action">
+                <a id="open-report-sheet" class="btn accent" href="#" target="_blank"
+                  rel="noopener noreferrer">更新用スプレットシートを開く</a>
+              </div>
             </div>
           </div>
         </div>
@@ -576,7 +734,8 @@
       reportSheetCsvUrl: '',
       fallbackReportsUrl: './data/reports.json',
       reportDriveFolderUrl: '',
-      reportSheetEditUrl: ''
+      reportSheetEditUrl: '',
+      reportSheetWebhookUrl: ''
     };
     const statusBox = document.getElementById('status-box');
     const sourceSummary = document.getElementById('source-summary');
@@ -584,13 +743,43 @@
     const helperStatus = document.getElementById('helper-status');
     const openDriveFolderLink = document.getElementById('open-drive-folder');
     const openReportSheetLink = document.getElementById('open-report-sheet');
+    const helperTarget = document.getElementById('helper-target');
+    const helperTargetId = document.getElementById('helper-target-id');
+    const helperTargetDate = document.getElementById('helper-target-date');
+    const helperTargetTitle = document.getElementById('helper-target-title');
+    const helperTargetCategory = document.getElementById('helper-target-category');
+    const helperTargetPlace = document.getElementById('helper-target-place');
+    const helperFormPanel = document.getElementById('helper-form-panel');
+    const reportPhotoForm = document.getElementById('report-photo-form');
+    const reportImageUrlInput = document.getElementById('report-image-url');
+    const reportImageAltInput = document.getElementById('report-image-alt');
+    const reportIdInput = document.getElementById('report-id-input');
+    const reportDateInput = document.getElementById('report-date-input');
+    const reportTitleInput = document.getElementById('report-title-input');
+    const reportCategoryInput = document.getElementById('report-category-input');
+    const reportPlaceInput = document.getElementById('report-place-input');
+    const submitReportPhotoButton = document.getElementById('submit-report-photo');
+    const backToReportLink = document.getElementById('back-to-report-link');
+    const helperSubmitResult = document.getElementById('helper-submit-result');
     const helperParams = new URLSearchParams(window.location.search);
     const helperMode = helperParams.get('mode') || '';
     let currentConfig = { ...defaultConfig };
+    let helperSubmitTimer = 0;
 
     if (helperMode === 'report-photo-helper') {
       document.body.classList.add('helper-mode');
       document.title = '活動報告 写真リンク入力補助 | 西成住之江支部';
+    }
+
+    if (document.referrer) {
+      try {
+        const referrerUrl = new URL(document.referrer, window.location.href);
+        if (referrerUrl.origin === window.location.origin) {
+          backToReportLink.href = referrerUrl.href;
+        }
+      } catch (error) {
+        console.error(error);
+      }
     }
 
     function escapeHtml(value) {
@@ -687,6 +876,62 @@
       }
     }
 
+    function decodeParam(value) {
+      return String(value || '').trim();
+    }
+
+    function setHelperResult(message, tone) {
+      helperSubmitResult.textContent = message;
+      helperSubmitResult.className = `helper-result ${tone || ''}`.trim();
+    }
+
+    function fillHelperTarget() {
+      const reportId = decodeParam(helperParams.get('reportId'));
+      const reportDate = decodeParam(helperParams.get('reportDate'));
+      const reportTitle = decodeParam(helperParams.get('reportTitle'));
+      const reportCategory = decodeParam(helperParams.get('reportCategory'));
+      const reportPlace = decodeParam(helperParams.get('reportPlace'));
+      const hasTarget = Boolean(reportId || (reportDate && reportTitle));
+
+      helperTarget.hidden = !hasTarget;
+      helperTargetId.textContent = reportId || '未指定';
+      helperTargetDate.textContent = reportDate || '未指定';
+      helperTargetTitle.textContent = reportTitle || '未指定';
+      helperTargetCategory.textContent = reportCategory || '未指定';
+      helperTargetPlace.textContent = reportPlace || '未指定';
+
+      reportIdInput.value = reportId;
+      reportDateInput.value = reportDate;
+      reportTitleInput.value = reportTitle;
+      reportCategoryInput.value = reportCategory;
+      reportPlaceInput.value = reportPlace;
+
+      return hasTarget;
+    }
+
+    function updateHelperFormState() {
+      const hasTarget = fillHelperTarget();
+      const hasWebhookUrl = isValidWebUrl(currentConfig.reportSheetWebhookUrl);
+
+      helperFormPanel.hidden = !hasTarget;
+      submitReportPhotoButton.disabled = !hasWebhookUrl;
+      submitReportPhotoButton.textContent = hasWebhookUrl ? 'この画面から反映する' : 'Webhook URL 設定待ち';
+      backToReportLink.hidden = true;
+
+      if (!hasTarget) {
+        setHelperResult('このカード専用の更新情報が渡されていません。活動履歴の「📸 写真をここに差し替え」から開いてください。', 'warn');
+        return;
+      }
+
+      if (!hasWebhookUrl) {
+        setHelperResult('Apps Script の Web アプリ URL が未設定です。`data/site-config.json` の `reportSheetWebhookUrl` を設定すると、この画面から直接反映できます。設定までは下の予備手順で手動更新できます。', 'warn');
+        return;
+      }
+
+      reportPhotoForm.action = currentConfig.reportSheetWebhookUrl;
+      setHelperResult('共有リンクを貼って「この画面から反映する」を押すと、この活動報告の `画像Url` を更新します。', 'ok');
+    }
+
     function csvRowsToEvents(rows) {
       if (!Array.isArray(rows) || rows.length < 2) {
         return [];
@@ -740,11 +985,21 @@
       const helperActive = helperMode === 'report-photo-helper' || Boolean(helperParams.get('reportId') || helperParams.get('reportTitle'));
       const hasValidDriveFolderUrl = isValidWebUrl(currentConfig.reportDriveFolderUrl);
       const hasValidReportSheetUrl = isValidWebUrl(currentConfig.reportSheetEditUrl);
+      const hasValidWebhookUrl = isValidWebUrl(currentConfig.reportSheetWebhookUrl);
+      const hasTarget = Boolean(helperParams.get('reportId') || (helperParams.get('reportDate') && helperParams.get('reportTitle')));
 
       if (!helperActive) {
         helperStatus.style.display = '';
         helperStatus.className = 'status warn';
         helperStatus.textContent = 'report.html の「📸 写真をここに差し替え」から開くと、対象の活動報告情報を引き継げます。';
+      } else if (!hasTarget) {
+        helperStatus.style.display = '';
+        helperStatus.className = 'status warn';
+        helperStatus.textContent = '対象の活動報告情報を受け取れていません。活動履歴カードのリンクから開き直してください。';
+      } else if (!hasValidWebhookUrl) {
+        helperStatus.style.display = '';
+        helperStatus.className = 'status warn';
+        helperStatus.textContent = 'この画面に貼るUIは使えますが、まだ Web アプリ URL が未設定です。`reportSheetWebhookUrl` を設定すると、スプレッドシートを開かずに直接反映できます。';
       } else if (hasValidDriveFolderUrl && hasValidReportSheetUrl) {
         helperStatus.style.display = 'none';
       } else {
@@ -777,6 +1032,7 @@
         openReportSheetLink.style.opacity = '0.55';
       }
 
+      updateHelperFormState();
     }
 
     async function loadConfig() {
@@ -860,6 +1116,45 @@
     }
 
     document.getElementById('reload-button').addEventListener('click', refresh);
+
+    reportPhotoForm.addEventListener('submit', (event) => {
+      const imageUrl = String(reportImageUrlInput.value || '').trim();
+      if (!imageUrl) {
+        event.preventDefault();
+        setHelperResult('送信する前に `画像Url` を入力してください。', 'warn');
+        return;
+      }
+
+      window.clearTimeout(helperSubmitTimer);
+      submitReportPhotoButton.disabled = true;
+      submitReportPhotoButton.textContent = '送信中...';
+      setHelperResult('Apps Script に送信しています。結果が返るまで少し待ってください。', 'ok');
+      helperSubmitTimer = window.setTimeout(() => {
+        submitReportPhotoButton.disabled = false;
+        submitReportPhotoButton.textContent = '画像Url を反映する';
+        setHelperResult('応答待ちがタイムアウトしました。Apps Script のデプロイURL、アクセス権、またはブラウザ設定を確認してください。', 'warn');
+      }, 15000);
+    });
+
+    window.addEventListener('message', (event) => {
+      const data = event.data;
+      if (!data || data.type !== 'report-photo-helper-result') {
+        return;
+      }
+
+      window.clearTimeout(helperSubmitTimer);
+      submitReportPhotoButton.disabled = false;
+      submitReportPhotoButton.textContent = '画像Url を反映する';
+
+      if (data.ok) {
+        backToReportLink.hidden = false;
+        setHelperResult(data.message || '画像Url を更新しました。公開CSVへの反映には少し時間がかかることがあります。', 'ok');
+        return;
+      }
+
+      setHelperResult(data.message || '画像Url の更新に失敗しました。Apps Script の設定を確認してください。', 'warn');
+    });
+
     refresh();
   </script>
 </body>
