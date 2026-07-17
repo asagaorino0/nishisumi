@@ -18,15 +18,21 @@ function doPost(e) {
     const params = (e && e.parameter) || {};
     const driveShareUrl = cleanString_(params.imageUrl);
     const imageAlt = cleanString_(params.imageAlt);
+    const reportPlace = cleanString_(params.place);
+    const reportText = cleanString_(params.text);
+    const reportKeywords = cleanString_(params.keywords);
+    const reportVisible = cleanString_(params.visible);
     const reportId = normalizeReportMatchValue_(params.reportId);
     const reportDate = normalizeReportMatchValue_(params.reportDate);
     const reportTitle = normalizeReportMatchValue_(params.reportTitle);
+    const hasImageUpdate = Boolean(driveShareUrl);
+    const hasTextUpdate = Boolean(reportPlace || reportText || reportKeywords || reportVisible);
 
-    if (!driveShareUrl) {
-      throw new Error('imageUrl が空です。');
-    }
     if (!reportId && !(reportDate && reportTitle)) {
       throw new Error('reportId または reportDate + reportTitle が必要です。');
+    }
+    if (!hasImageUpdate && !hasTextUpdate) {
+      throw new Error('更新内容が空です。');
     }
 
     const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
@@ -85,12 +91,47 @@ function doPost(e) {
       'preview',
       'プレビュー'
     ]);
+    const reportPlaceColumn = findHeaderIndex_(headerIndexMap, [
+      '場所',
+      'place',
+      'location',
+      'venue',
+      '会場'
+    ]);
+    const reportTextColumn = findHeaderIndex_(headerIndexMap, [
+      '内容',
+      'text',
+      'body',
+      'report',
+      '本文',
+      '詳細'
+    ]);
+    const reportKeywordsColumn = findHeaderIndex_(headerIndexMap, [
+      'タグ',
+      'keywords',
+      'tags',
+      'キーワード'
+    ]);
+    const reportVisibleColumn = findHeaderIndex_(headerIndexMap, [
+      '公開/非公開',
+      'visible',
+      '公開'
+    ]);
     const reportIdColumn = findHeaderIndex_(headerIndexMap, ['識別子', 'id']);
     const reportDateColumn = findHeaderIndex_(headerIndexMap, ['年月日', '日付', 'date']);
     const reportTitleColumn = findHeaderIndex_(headerIndexMap, ['タイトル', 'title']);
 
-    if (driveShareUrlColumn < 0) {
+    if (hasImageUpdate && driveShareUrlColumn < 0) {
       throw new Error('画像Url 列が見つかりません。');
+    }
+    if (reportText && reportTextColumn < 0) {
+      throw new Error('内容 列が見つかりません。');
+    }
+    if (reportKeywords && reportKeywordsColumn < 0) {
+      throw new Error('タグ 列が見つかりません。');
+    }
+    if (reportVisible && reportVisibleColumn < 0) {
+      throw new Error('公開/非公開 列が見つかりません。');
     }
 
     const rowIndex = rows.findIndex(function (row) {
@@ -109,41 +150,70 @@ function doPost(e) {
     }
 
     const targetRow = REPORT_PHOTO_HELPER_CONFIG.headerRow + 1 + rowIndex;
-    const imageFileId = extractDriveFileId_(driveShareUrl);
-    const derivedImageUrl = imageFileId
-      ? buildThumbnailImageUrl_(imageFileId)
-      : '';
+    const skippedFields = [];
+    let imageFileId = '';
+    let derivedImageUrl = '';
 
-    sheet.getRange(targetRow, driveShareUrlColumn + 1).setValue(driveShareUrl);
+    if (hasImageUpdate) {
+      imageFileId = extractDriveFileId_(driveShareUrl);
+      derivedImageUrl = imageFileId
+        ? buildThumbnailImageUrl_(imageFileId)
+        : '';
 
-    if (imageFileIdColumn >= 0) {
-      sheet.getRange(targetRow, imageFileIdColumn + 1).setValue(imageFileId);
-    }
+      sheet.getRange(targetRow, driveShareUrlColumn + 1).setValue(driveShareUrl);
 
-    if (derivedImageUrlColumn >= 0) {
-      sheet.getRange(targetRow, derivedImageUrlColumn + 1).setValue(derivedImageUrl);
-    }
-
-    if (imageAltColumn >= 0 && imageAlt) {
-      sheet.getRange(targetRow, imageAltColumn + 1).setValue(imageAlt);
-    }
-
-    if (previewImageColumn >= 0) {
-      const previewFormula = buildPreviewFormula_(
-        targetRow,
-        imageFileIdColumn,
-        derivedImageUrlColumn
-      );
-      if (previewFormula) {
-        sheet.getRange(targetRow, previewImageColumn + 1).setFormula(previewFormula);
+      if (imageFileIdColumn >= 0) {
+        sheet.getRange(targetRow, imageFileIdColumn + 1).setValue(imageFileId);
       }
+
+      if (derivedImageUrlColumn >= 0) {
+        sheet.getRange(targetRow, derivedImageUrlColumn + 1).setValue(derivedImageUrl);
+      }
+
+      if (imageAltColumn >= 0 && imageAlt) {
+        sheet.getRange(targetRow, imageAltColumn + 1).setValue(imageAlt);
+      }
+
+      if (previewImageColumn >= 0) {
+        const previewFormula = buildPreviewFormula_(
+          targetRow,
+          imageFileIdColumn,
+          derivedImageUrlColumn
+        );
+        if (previewFormula) {
+          sheet.getRange(targetRow, previewImageColumn + 1).setFormula(previewFormula);
+        }
+      }
+    }
+
+    if (reportPlaceColumn >= 0 && reportPlace) {
+      sheet.getRange(targetRow, reportPlaceColumn + 1).setValue(reportPlace);
+    } else if (reportPlace && reportPlaceColumn < 0) {
+      skippedFields.push('場所');
+    }
+
+    if (reportTextColumn >= 0 && reportText) {
+      sheet.getRange(targetRow, reportTextColumn + 1).setValue(reportText);
+    }
+
+    if (reportKeywordsColumn >= 0 && reportKeywords) {
+      sheet.getRange(targetRow, reportKeywordsColumn + 1).setValue(reportKeywords);
+    }
+
+    if (reportVisibleColumn >= 0 && reportVisible) {
+      sheet.getRange(targetRow, reportVisibleColumn + 1).setValue(reportVisible);
     }
 
     SpreadsheetApp.flush();
 
+    let message = '活動報告シート ' + targetRow + ' 行目を更新しました。';
+    if (skippedFields.length > 0) {
+      message += ' ' + skippedFields.join('・') + ' は活動報告シートに列がないため反映していません。';
+    }
+
     return buildPostMessageHtml_({
       ok: true,
-      message: '活動報告シート ' + targetRow + ' 行目の画像情報を更新しました。',
+      message: message,
       imageUrl: driveShareUrl,
       imageFileId: imageFileId,
       derivedImageUrl: derivedImageUrl,

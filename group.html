@@ -649,9 +649,9 @@
     </div>
     <nav>
       <ul>
-        <li><a href="index.html">HOME</a></li>
-        <li><a href="report.html">活動報告</a></li>
-        <li><a href="group.html" class="active">小グループ会</a></li>
+        <li><a href="index.html" data-preserve-admin="1" onclick="return preserveAdminNavigation(event, this);">HOME</a></li>
+        <li><a href="report.html" data-preserve-admin="1" onclick="return preserveAdminNavigation(event, this);">活動報告</a></li>
+        <li><a href="group.html" class="active" data-preserve-admin="1" onclick="return preserveAdminNavigation(event, this);">小グループ会</a></li>
       </ul>
     </nav>
   </header>
@@ -926,6 +926,24 @@
     </div>
   </div>
   <script>
+    const currentParams = new URLSearchParams(window.location.search);
+    function preserveAdminNavigation(event, link) {
+      if (currentParams.get('admin') !== '1') {
+        return true;
+      }
+      const href = link.getAttribute('href');
+      if (!href || href.startsWith('http') || href.startsWith('#')) {
+        return true;
+      }
+      if (event) {
+        event.preventDefault();
+      }
+      const url = new URL(href, window.location.href);
+      url.searchParams.set('admin', '1');
+      window.location.href = `${url.pathname.split('/').pop()}${url.search}`;
+      return false;
+    }
+
     const defaultConfig = {
       sheetCsvUrl: '',
       fallbackJsonUrl: './data/events.json',

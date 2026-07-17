@@ -476,9 +476,9 @@
     </div>
     <nav>
       <ul>
-        <li><a href="index.html">HOME</a></li>
-        <li><a href="report.html" class="active">活動報告</a></li>
-        <li><a href="group.html">小グループ会</a></li>
+        <li><a href="index.html" data-preserve-admin="1" onclick="return preserveAdminNavigation(event, this);">HOME</a></li>
+        <li><a href="report.html" class="active" data-preserve-admin="1" onclick="return preserveAdminNavigation(event, this);">活動報告</a></li>
+        <li><a href="group.html" data-preserve-admin="1" onclick="return preserveAdminNavigation(event, this);">小グループ会</a></li>
       </ul>
     </nav>
   </header>
@@ -515,6 +515,24 @@
     <div class="footer-bottom">© 2026 大阪中小企業家同友会 西成住之江支部</div>
   </footer>
   <script>
+    const currentParams = new URLSearchParams(window.location.search);
+    function preserveAdminNavigation(event, link) {
+      if (currentParams.get('admin') !== '1') {
+        return true;
+      }
+      const href = link.getAttribute('href');
+      if (!href || href.startsWith('http') || href.startsWith('#')) {
+        return true;
+      }
+      if (event) {
+        event.preventDefault();
+      }
+      const url = new URL(href, window.location.href);
+      url.searchParams.set('admin', '1');
+      window.location.href = `${url.pathname.split('/').pop()}${url.search}`;
+      return false;
+    }
+
     const defaultConfig = {
       reportSheetCsvUrl: '',
       fallbackReportsUrl: './data/reports.json'
@@ -524,6 +542,7 @@
     const summaryGrid = document.getElementById('summary-grid');
     const toolbarStatus = document.getElementById('toolbar-status');
     const weekdayFormatter = new Intl.DateTimeFormat('ja-JP', { weekday: 'short' });
+    const isAdminMode = new URLSearchParams(window.location.search).get('admin') === '1';
 
     let activeFilter = 'all';
 
@@ -783,7 +802,7 @@
     }
 
     async function loadReportsFromSheet(csvUrl) {
-      const response = await fetch(csvUrl, { cache: 'no-store' });
+      const response = await fetch(buildFreshRequestUrl(csvUrl), { cache: 'no-store' });
       if (!response.ok) {
         throw new Error('Failed to fetch published report Google Sheet CSV');
       }
@@ -806,6 +825,17 @@
 
     function buildReportIdentifier(date, title) {
       return `${normalizeReportMatchValue(date)}__${normalizeReportMatchValue(title)}`;
+    }
+
+    function buildFreshRequestUrl(url) {
+      try {
+        const parsed = new URL(String(url || ''), window.location.href);
+        parsed.searchParams.set('_', String(Date.now()));
+        return parsed.toString();
+      } catch (error) {
+        console.error(error);
+        return url;
+      }
     }
 
     function getReportMatchIdentifier(item) {
@@ -950,7 +980,9 @@
         const imageSource = getReportImageSource(item.imageUrl);
         const imageMarkup = imageSource
           ? `<img src="${escapeAttribute(imageSource.src)}" data-fallbacks="${escapeAttribute(imageSource.fallbacks.join('||'))}" alt="${escapeHtml(item.imageAlt || item.categoryLabel)}" loading="lazy" decoding="async" referrerpolicy="no-referrer">`
-          : `<a class="report-img-link" href="${escapeAttribute(helperLink)}" target="_blank" rel="noopener noreferrer" aria-label="${escapeAttribute(`${item.title.replace(/\n/g, ' ')} の写真リンク入力補助を開く`)}">📸 写真をここに差し替え</a>`;
+          : (isAdminMode
+            ? `<a class="report-img-link" href="${escapeAttribute(helperLink)}" target="_blank" rel="noopener noreferrer" aria-label="${escapeAttribute(`${item.title.replace(/\n/g, ' ')} の写真リンク入力補助を開く`)}">📸 写真をここに差し替え</a>`
+            : '<div class="report-img-link" aria-hidden="true">写真準備中</div>');
         return `
         <article class="report-item" data-report-id="${escapeAttribute(getReportMatchIdentifier(item))}">
           <div class="report-img">${imageMarkup}</div>
