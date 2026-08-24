@@ -193,7 +193,8 @@
     sheetCsvUrl: '',
     fallbackJsonUrl: './data/events.json',
     reportSheetCsvUrl: '',
-    fallbackReportsUrl: './data/reports.json'
+    fallbackReportsUrl: './data/reports.json',
+    reportSheetWebhookUrl: ''
   };
   const UPCOMING_EVENT_WINDOW_DAYS = 90;
   const today = new Date();
@@ -454,6 +455,22 @@
     }
   }
 
+  function isValidWebUrl(value) {
+    try {
+      const parsed = new URL(String(value || '').trim(), window.location.href);
+      return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+    } catch (error) {
+      return false;
+    }
+  }
+
+  function buildApiResourceUrl(baseUrl, resource) {
+    const parsed = new URL(String(baseUrl || '').trim(), window.location.href);
+    parsed.searchParams.set('resource', resource);
+    parsed.searchParams.set('_', String(Date.now()));
+    return parsed.toString();
+  }
+
   function unwrapMarkdownLink(value) {
     const text = String(value || '').trim();
     const markdownMatch = text.match(/^\[.*?\]\((https?:\/\/.+)\)$/i);
@@ -587,6 +604,32 @@
       .filter((item) => item.date && item.title && item.text);
   }
 
+  function normalizeLiveReports(items) {
+    return (Array.isArray(items) ? items : [])
+      .map((item) => {
+        const visible = String(item?.visible || '').trim();
+        if (visible && ['0', 'false', 'no', '非公開'].includes(visible.toLowerCase())) {
+          return null;
+        }
+
+        const categoryLabel = String(item?.categoryLabel || item?.category || '活動報告').trim();
+        const normalizedTitle = String(item?.title || '').trim();
+        const normalizedDate = String(item?.date || '').trim();
+        return {
+          id: String(item?.id || buildReportIdentifier(normalizedDate, normalizedTitle)).trim(),
+          date: normalizedDate,
+          categoryLabel,
+          title: normalizedTitle,
+          text: String(item?.text || item?.body || item?.detail || '').trim(),
+          place: String(item?.place || item?.location || '').trim(),
+          keywords: parseKeywords(item?.keywords),
+          imageUrl: String(item?.imageUrl || '').trim(),
+          imageAlt: String(item?.imageAlt || '').trim()
+        };
+      })
+      .filter((item) => item && item.date && item.title && item.text);
+  }
+
   function sortReports(items) {
     return [...items].sort((a, b) => {
       const dateCompare = new Date(b.date) - new Date(a.date);
@@ -668,7 +711,7 @@
 
         return {
           date: pickValue(record, ['date', '日付', '年月日']),
-          index: pickValue(record, ['index', 'インデックス']),
+          index: pickValue(record, ['index', 'round', 'インデックス', '回']),
           category: pickValue(record, ['category', '区分', '種別']),
           group: pickValue(record, ['group', 'グループ', '小グループ']),
           title: pickValue(record, ['title', 'タイトル']),
@@ -698,6 +741,12 @@
         && rowKey !== 'block'
         && rowKey !== 'board'
         && (rowKey !== 'branch' || scheduleIndex);
+    }).sort((a, b) => {
+      const dateCompare = String(a.date || '').localeCompare(String(b.date || ''));
+      if (dateCompare !== 0) {
+        return dateCompare;
+      }
+      return String(a.title || '').localeCompare(String(b.title || ''), 'ja');
     });
 
     if (upcomingEvents.length === 0) {
@@ -886,6 +935,15 @@
     return Array.isArray(data.events) ? data.events : [];
   }
 
+  async function loadEventsFromApi(apiUrl) {
+    const response = await fetch(buildApiResourceUrl(apiUrl, 'events'), { cache: 'no-store' });
+    if (!response.ok) {
+      throw new Error('Failed to fetch live events API');
+    }
+    const data = await response.json();
+    return Array.isArray(data.events) ? data.events : [];
+  }
+
   async function loadReportsFromSheet(csvUrl) {
     const response = await fetch(buildFreshRequestUrl(csvUrl), { cache: 'no-store' });
     if (!response.ok) {
@@ -902,15 +960,44 @@
     return normalizeJsonReports(await response.json());
   }
 
+  async function loadReportsFromApi(apiUrl) {
+    const response = await fetch(buildApiResourceUrl(apiUrl, 'reports'), { cache: 'no-store' });
+    if (!response.ok) {
+      throw new Error('Failed to fetch live reports API');
+    }
+    const data = await response.json();
+    return normalizeLiveReports(data.reports);
+  }
+
   async function loadPageData() {
     try {
       const config = await loadConfig();
-      const events = config.sheetCsvUrl
-        ? await loadEventsFromSheet(config.sheetCsvUrl)
-        : await loadEventsFromJson(config.fallbackJsonUrl);
-      const reports = config.reportSheetCsvUrl
-        ? await loadReportsFromSheet(config.reportSheetCsvUrl)
-        : await loadReportsFromJson(config.fallbackReportsUrl);
+      let events = [];
+      let reports = [];
+
+      if (isValidWebUrl(config.reportSheetWebhookUrl)) {
+        try {
+          [events, reports] = await Promise.all([
+            loadEventsFromApi(config.reportSheetWebhookUrl),
+            loadReportsFromApi(config.reportSheetWebhookUrl)
+          ]);
+        } catch (apiError) {
+          console.error(apiError);
+        }
+      }
+
+      if (!events.length) {
+        events = config.sheetCsvUrl
+          ? await loadEventsFromSheet(config.sheetCsvUrl)
+          : await loadEventsFromJson(config.fallbackJsonUrl);
+      }
+
+      if (!reports.length) {
+        reports = config.reportSheetCsvUrl
+          ? await loadReportsFromSheet(config.reportSheetCsvUrl)
+          : await loadReportsFromJson(config.fallbackReportsUrl);
+      }
+
       renderHomeReports(reports);
       renderEvents(events);
       renderAnnualSchedule(events);

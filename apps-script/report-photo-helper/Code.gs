@@ -1,16 +1,48 @@
 const REPORT_PHOTO_HELPER_CONFIG = {
   sheetName: '活動報告',
+  scheduleSheetName: 'スケジュール',
   headerRow: 1,
   thumbnailSize: 'w1600'
 };
 
-function doGet() {
-  return ContentService
-    .createTextOutput(JSON.stringify({
+function doGet(e) {
+  try {
+    var params = (e && e.parameter) || {};
+    var resource = cleanString_(params.resource).toLowerCase();
+    var includeHidden = cleanString_(params.includeHidden).toLowerCase() === 'true';
+
+    if (resource === 'reports') {
+      return jsonResponse_({
+        ok: true,
+        reports: getReportsPayload_(includeHidden)
+      });
+    }
+
+    if (resource === 'events') {
+      return jsonResponse_({
+        ok: true,
+        events: getEventsPayload_()
+      });
+    }
+
+    if (resource === 'all') {
+      return jsonResponse_({
+        ok: true,
+        reports: getReportsPayload_(includeHidden),
+        events: getEventsPayload_()
+      });
+    }
+
+    return jsonResponse_({
       ok: true,
       message: 'report-photo-helper is ready'
-    }))
-    .setMimeType(ContentService.MimeType.JSON);
+    });
+  } catch (error) {
+    return jsonResponse_({
+      ok: false,
+      message: error && error.message ? error.message : 'データ取得に失敗しました。'
+    });
+  }
 }
 
 function doPost(e) {
@@ -256,6 +288,167 @@ function findHeaderIndex_(headerIndexMap, candidates) {
     }
   }
   return -1;
+}
+
+function jsonResponse_(payload) {
+  return ContentService
+    .createTextOutput(JSON.stringify(payload))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function getSpreadsheet_() {
+  var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+  if (!spreadsheet) {
+    throw new Error('このスクリプトは対象スプレッドシートに紐づけて配置してください。');
+  }
+  return spreadsheet;
+}
+
+function getSheetRows_(sheetName) {
+  var spreadsheet = getSpreadsheet_();
+  var sheet = spreadsheet.getSheetByName(sheetName);
+  if (!sheet) {
+    throw new Error(sheetName + ' シートが見つかりません。');
+  }
+
+  var lastRow = sheet.getLastRow();
+  var lastColumn = sheet.getLastColumn();
+  if (lastRow < REPORT_PHOTO_HELPER_CONFIG.headerRow) {
+    return [];
+  }
+
+  return sheet
+    .getRange(
+      REPORT_PHOTO_HELPER_CONFIG.headerRow,
+      1,
+      lastRow - REPORT_PHOTO_HELPER_CONFIG.headerRow + 1,
+      lastColumn
+    )
+    .getDisplayValues();
+}
+
+function getSheetRecords_(sheetName) {
+  var rows = getSheetRows_(sheetName);
+  if (!rows.length) {
+    return [];
+  }
+
+  var headers = rows[0].map(function (header) {
+    return normalizeHeader_(header);
+  });
+
+  return rows.slice(1)
+    .filter(function (row) {
+      return row.some(function (cell) {
+        return cleanString_(cell) !== '';
+      });
+    })
+    .map(function (row) {
+      var record = {};
+      headers.forEach(function (header, index) {
+        record[header] = row[index] || '';
+      });
+      return record;
+    });
+}
+
+function getReportsPayload_(includeHidden) {
+  return getSheetRecords_(REPORT_PHOTO_HELPER_CONFIG.sheetName)
+    .map(function (record) {
+      var visible = pickRecordValue_(record, ['visible', '公開', '公開/非公開']);
+      if (!includeHidden && isHiddenValue_(visible)) {
+        return null;
+      }
+
+      var date = pickRecordValue_(record, ['date', '日付', '年月日']);
+      var title = pickRecordValue_(record, ['title', 'タイトル']);
+      return {
+        id: pickRecordValue_(record, ['id', '識別子']) || buildReportIdentifier_(date, title),
+        date: date,
+        categoryLabel: pickRecordValue_(record, ['category', '区分', '種別']) || '活動報告',
+        title: title,
+        text: pickRecordValue_(record, ['text', 'body', 'report', '本文', '内容', '詳細']),
+        place: pickRecordValue_(record, ['place', 'location', 'venue', '会場', '場所']),
+        keywords: parseKeywords_(pickRecordValue_(record, ['keywords', 'tags', 'キーワード', 'タグ'])),
+        imageUrl: pickRecordValue_(record, ['imageurl', 'image', 'photo', '画像url', '写真url']),
+        imageAlt: pickRecordValue_(record, ['imagealt', 'alt', '画像alt', '代替テキスト', '画像説明']),
+        visible: visible || ''
+      };
+    })
+    .filter(function (item) {
+      return item && item.date && item.title;
+    });
+}
+
+function getEventsPayload_() {
+  return getSheetRecords_(REPORT_PHOTO_HELPER_CONFIG.scheduleSheetName)
+    .map(function (record) {
+      return {
+        date: pickRecordValue_(record, ['date', '日付', '年月日']),
+        index: pickRecordValue_(record, ['index', 'round', 'インデックス', '回']),
+        category: pickRecordValue_(record, ['category', '区分', '種別']),
+        group: pickRecordValue_(record, ['group', 'グループ', '小グループ']),
+        title: pickRecordValue_(record, ['title', 'タイトル']),
+        place: pickRecordValue_(record, ['place', '場所', 'location', 'venue', '会場']),
+        time: pickRecordValue_(record, ['time', '時間']),
+        detail: pickRecordValue_(record, ['detail', '詳細', 'place', '場所']),
+        url: pickRecordValue_(record, ['url', 'e.doyu_url', 'リンクurl', 'linkurl', 'リンク']),
+        linkLabel: pickRecordValue_(record, ['linklabel', 'リンク文字', 'button', 'ボタン文字']),
+        latestGuideVisible: isTruthyValue_(pickRecordValue_(record, ['latestguidevisible', '直近のイベント案内表示', 'visible', '公開']))
+      };
+    })
+    .filter(function (item) {
+      return item.date && item.title;
+    })
+    .sort(function (a, b) {
+      var dateCompare = cleanString_(a.date).localeCompare(cleanString_(b.date));
+      if (dateCompare !== 0) {
+        return dateCompare;
+      }
+      return cleanString_(a.title).localeCompare(cleanString_(b.title), 'ja');
+    });
+}
+
+function pickRecordValue_(record, keys) {
+  for (var i = 0; i < keys.length; i += 1) {
+    var key = normalizeHeader_(keys[i]);
+    if (Object.prototype.hasOwnProperty.call(record, key)) {
+      var value = cleanString_(record[key]);
+      if (value) {
+        return value;
+      }
+    }
+  }
+  return '';
+}
+
+function isHiddenValue_(value) {
+  var normalized = cleanString_(value).toLowerCase();
+  return normalized === '0'
+    || normalized === 'false'
+    || normalized === 'no'
+    || normalized === '非公開';
+}
+
+function isTruthyValue_(value) {
+  var normalized = cleanString_(value).toLowerCase();
+  return normalized === '1'
+    || normalized === 'true'
+    || normalized === 'yes'
+    || normalized === '公開';
+}
+
+function parseKeywords_(value) {
+  return cleanString_(value)
+    .split(/[,\n、/／]+/)
+    .map(function (item) {
+      return cleanString_(item);
+    })
+    .filter(Boolean);
+}
+
+function buildReportIdentifier_(date, title) {
+  return normalizeReportMatchValue_(date) + '__' + normalizeReportMatchValue_(title);
 }
 
 function extractDriveFileId_(value) {

@@ -535,7 +535,8 @@
 
     const defaultConfig = {
       reportSheetCsvUrl: '',
-      fallbackReportsUrl: './data/reports.json'
+      fallbackReportsUrl: './data/reports.json',
+      reportSheetWebhookUrl: ''
     };
     const reportList = document.getElementById('report-list');
     const filterGroup = document.getElementById('filter-group');
@@ -788,6 +789,34 @@
         .filter((item) => item.date && item.title && item.text);
     }
 
+    function normalizeLiveReports(items, includeHidden = false) {
+      return (Array.isArray(items) ? items : [])
+        .map((item) => {
+          const visible = String(item?.visible || '').trim();
+          if (!includeHidden && visible && ['0', 'false', 'no', '非公開'].includes(visible.toLowerCase())) {
+            return null;
+          }
+
+          const categoryLabel = String(item?.categoryLabel || item?.category || '活動報告').trim();
+          const normalizedTitle = String(item?.title || '').trim();
+          const normalizedDate = String(item?.date || '').trim();
+          return {
+            id: String(item?.id || buildReportIdentifier(normalizedDate, normalizedTitle)).trim(),
+            date: normalizedDate,
+            categoryLabel,
+            category: normalizeCategoryKey(categoryLabel),
+            title: normalizedTitle,
+            text: String(item?.text || item?.body || item?.detail || '').trim(),
+            place: String(item?.place || item?.location || '').trim(),
+            keywords: parseKeywords(item?.keywords),
+            imageUrl: String(item?.imageUrl || '').trim(),
+            imageAlt: String(item?.imageAlt || '').trim(),
+            visible
+          };
+        })
+        .filter((item) => item && item.date && item.title && item.text);
+    }
+
     async function loadConfig() {
       try {
         const response = await fetch('./data/site-config.json', { cache: 'no-store' });
@@ -836,6 +865,34 @@
         console.error(error);
         return url;
       }
+    }
+
+    function isValidWebUrl(value) {
+      try {
+        const parsed = new URL(String(value || '').trim(), window.location.href);
+        return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+      } catch (error) {
+        return false;
+      }
+    }
+
+    function buildApiResourceUrl(baseUrl, resource, includeHidden) {
+      const parsed = new URL(String(baseUrl || '').trim(), window.location.href);
+      parsed.searchParams.set('resource', resource);
+      if (includeHidden) {
+        parsed.searchParams.set('includeHidden', 'true');
+      }
+      parsed.searchParams.set('_', String(Date.now()));
+      return parsed.toString();
+    }
+
+    async function loadReportsFromApi(apiUrl, includeHidden = false) {
+      const response = await fetch(buildApiResourceUrl(apiUrl, 'reports', includeHidden), { cache: 'no-store' });
+      if (!response.ok) {
+        throw new Error('Failed to fetch live reports API');
+      }
+      const data = await response.json();
+      return normalizeLiveReports(data.reports, includeHidden);
     }
 
     function getReportMatchIdentifier(item) {
@@ -1080,9 +1137,22 @@
     async function loadReports() {
       try {
         const config = await loadConfig();
-        const reports = config.reportSheetCsvUrl
-          ? await loadReportsFromSheet(config.reportSheetCsvUrl)
-          : await loadReportsFromJson(config.fallbackReportsUrl);
+        let reports = [];
+
+        if (isValidWebUrl(config.reportSheetWebhookUrl)) {
+          try {
+            reports = await loadReportsFromApi(config.reportSheetWebhookUrl, false);
+          } catch (apiError) {
+            console.error(apiError);
+          }
+        }
+
+        if (!reports.length) {
+          reports = config.reportSheetCsvUrl
+            ? await loadReportsFromSheet(config.reportSheetCsvUrl)
+            : await loadReportsFromJson(config.fallbackReportsUrl);
+        }
+
         currentReports = sortReports(applyPendingReportPhotoUpdate(reports));
         activeFilter = 'all';
         // renderSummary(currentReports);
