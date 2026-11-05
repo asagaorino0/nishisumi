@@ -11,6 +11,10 @@ function doGet(e) {
     var resource = cleanString_(params.resource).toLowerCase();
     var includeHidden = cleanString_(params.includeHidden).toLowerCase() === 'true';
 
+    if (resource === 'report-photo') {
+      return jsonResponse_(getPublicReportPhoto_(cleanString_(params.reportId)));
+    }
+
     if (resource === 'reports') {
       return jsonResponse_({
         ok: true,
@@ -67,9 +71,9 @@ function doPost(e) {
       throw new Error('更新内容が空です。');
     }
 
-    // ログイン済み管理者だけが見える写真を保存しない。シート更新前に検証する。
+    // 写真は実行者権限で配信するため、実行者が読めることを保存前に確認する。
     if (hasImageUpdate) {
-      assertPublicDriveImage_(driveShareUrl);
+      assertReadableReportPhoto_(driveShareUrl);
     }
 
     const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
@@ -467,6 +471,10 @@ function extractDriveFileId_(value) {
     text = markdownMatch[1];
   }
 
+  if (/^https?:\/\//i.test(text) && !/^https?:\/\/(drive\.google\.com|lh3\.googleusercontent\.com)\//i.test(text)) {
+    return '';
+  }
+
   var patterns = [
     /\/d\/([a-zA-Z0-9_-]+)/,
     /[?&]id=([a-zA-Z0-9_-]+)/,
@@ -482,6 +490,54 @@ function extractDriveFileId_(value) {
   }
 
   return '';
+}
+
+function getDrivePhotoBlob_(value) {
+  var fileId = extractDriveFileId_(value);
+  if (!fileId) throw new Error('Driveの写真リンクを確認してください。');
+  var keyMatch = cleanString_(value).match(/[?&]resourcekey=([a-zA-Z0-9_-]+)/i);
+  var file;
+  try {
+    file = keyMatch
+      ? DriveApp.getFileByIdAndResourceKey(fileId, keyMatch[1])
+      : DriveApp.getFileById(fileId);
+  } catch (error) {
+    throw new Error('写真を読み取れません。Apps Scriptの実行者に写真の閲覧権限を付けてください。一般公開の共有設定は不要です。');
+  }
+  if (!/^image\/(jpeg|png|webp|gif)$/i.test(file.getMimeType())) {
+    throw new Error('写真はJPEG・PNG・WebP・GIFを使用してください。');
+  }
+  // 大きな原本はDriveの表示用サムネイルを利用し、転送量を制限する。
+  var blob = file.getSize() > 8 * 1024 * 1024 ? file.getThumbnail() : file.getBlob();
+  if (!blob || !/^image\/(jpeg|png|webp|gif)$/i.test(blob.getContentType())) {
+    throw new Error('写真の表示用データを取得できません。画像サイズを小さくして再登録してください。');
+  }
+  if (blob.getBytes().length > 8 * 1024 * 1024) {
+    throw new Error('写真の表示用データが大きすぎます。8MB以下にしてください。');
+  }
+  return blob;
+}
+
+function getPublicReportPhoto_(reportId) {
+  // 任意のファイルIDを受け取らない。毎回シートで公開状態を確認する。
+  var reports = getReportsPayload_(false);
+  var report = reports.filter(function (item) { return item.id === reportId; })[0];
+  if (!reportId || !report || !report.imageUrl) {
+    throw new Error('公開対象の写真が見つかりません。');
+  }
+  var blob = getDrivePhotoBlob_(report.imageUrl);
+  return {
+    ok: true,
+    dataUrl: 'data:' + blob.getContentType() + ';base64,' + Utilities.base64Encode(blob.getBytes())
+  };
+}
+
+function assertReadableReportPhoto_(value) {
+  if (extractDriveFileId_(value)) {
+    getDrivePhotoBlob_(value);
+    return;
+  }
+  assertPublicDriveImage_(value);
 }
 
 function assertPublicDriveImage_(value) {

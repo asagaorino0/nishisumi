@@ -514,7 +514,8 @@
     <p>お問い合わせ：支部長 堂上 智史</p>
     <div class="footer-bottom">© 2026 大阪中小企業家同友会 西成住之江支部</div>
   </footer>
-  <script>
+  <script src="./js/report-photos.js"></script>
+<script>
     const currentParams = new URLSearchParams(window.location.search);
     function preserveAdminNavigation(event, link) {
       if (currentParams.get('admin') !== '1') {
@@ -543,6 +544,7 @@
     const summaryGrid = document.getElementById('summary-grid');
     const toolbarStatus = document.getElementById('toolbar-status');
     const weekdayFormatter = new Intl.DateTimeFormat('ja-JP', { weekday: 'short' });
+    let reportPhotoApiUrl = '';
     const isAdminMode = new URLSearchParams(window.location.search).get('admin') === '1';
 
     let activeFilter = 'all';
@@ -638,6 +640,9 @@
 
     function extractGoogleDriveFileId(value) {
       const text = unwrapMarkdownLink(value);
+      try {
+        if (!['drive.google.com', 'lh3.googleusercontent.com'].includes(new URL(text).hostname)) return '';
+      } catch (error) { return ''; }
       if (!text) {
         return '';
       }
@@ -1036,7 +1041,7 @@
         const helperLink = `admin.html?mode=report-photo-helper&reportId=${encodeURIComponent(item.id)}&reportDate=${encodeURIComponent(item.date)}&reportTitle=${encodeURIComponent(item.title)}&reportCategory=${encodeURIComponent(item.categoryLabel || '')}&reportPlace=${encodeURIComponent(item.place || '')}`;
         const imageSource = getReportImageSource(item.imageUrl);
         const imageMarkup = imageSource
-          ? `<img src="${escapeAttribute(imageSource.src)}" data-fallbacks="${escapeAttribute(imageSource.fallbacks.join('||'))}" alt="${escapeHtml(item.imageAlt || item.categoryLabel)}" loading="lazy" decoding="async" referrerpolicy="no-referrer">`
+          ? `<img src="${escapeAttribute(imageSource.src)}" data-report-id="${escapeAttribute(item.id)}" data-fallbacks="${escapeAttribute(imageSource.fallbacks.join('||'))}" alt="${escapeHtml(item.imageAlt || item.categoryLabel)}" loading="lazy" decoding="async" referrerpolicy="no-referrer">`
           : (isAdminMode
             ? `<a class="report-img-link" href="${escapeAttribute(helperLink)}" target="_blank" rel="noopener noreferrer" aria-label="${escapeAttribute(`${item.title.replace(/\n/g, ' ')} の写真リンク入力補助を開く`)}">📸 写真をここに差し替え</a>`
             : '<div class="report-img-link" aria-hidden="true">写真準備中</div>');
@@ -1058,20 +1063,7 @@
       }).join('');
 
       reportList.querySelectorAll('.report-img img[data-fallbacks]').forEach((img) => {
-        img.addEventListener('error', () => {
-          const fallbacks = String(img.dataset.fallbacks || '')
-            .split('||')
-            .map((value) => value.trim())
-            .filter(Boolean);
-          const fallbackIndex = Number(img.dataset.fallbackIndex || '0');
-
-          if (fallbackIndex >= fallbacks.length) {
-            return;
-          }
-
-          img.dataset.fallbackIndex = String(fallbackIndex + 1);
-          img.src = fallbacks[fallbackIndex];
-        });
+        window.ReportPhotos.attach(img, reportPhotoApiUrl);
       });
     }
 
@@ -1137,6 +1129,7 @@
     async function loadReports() {
       try {
         const config = await loadConfig();
+        reportPhotoApiUrl = config.reportSheetWebhookUrl || '';
         let reports = [];
 
         if (isValidWebUrl(config.reportSheetWebhookUrl)) {

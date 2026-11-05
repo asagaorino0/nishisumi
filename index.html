@@ -165,6 +165,7 @@
   <p>お問い合わせ：支部長 堂上 智史</p>
   <div class="footer-bottom">© 2026 大阪中小企業家同友会 西成住之江支部</div>
 </footer>
+<script src="./js/report-photos.js"></script>
 <script>
   const currentParams = new URLSearchParams(window.location.search);
   function preserveAdminNavigation(event, link) {
@@ -188,6 +189,7 @@
   const eventList = document.querySelector('.event-list');
   const annualScheduleBody = document.getElementById('annual-schedule-body');
   const weekdayFormatter = new Intl.DateTimeFormat('ja-JP', { weekday: 'long' });
+  let reportPhotoApiUrl = '';
   const isAdminMode = new URLSearchParams(window.location.search).get('admin') === '1';
   const defaultConfig = {
     sheetCsvUrl: '',
@@ -479,6 +481,9 @@
 
   function extractGoogleDriveFileId(value) {
     const text = unwrapMarkdownLink(value);
+    try {
+      if (!['drive.google.com', 'lh3.googleusercontent.com'].includes(new URL(text).hostname)) return '';
+    } catch (error) { return ''; }
     if (!text) {
       return '';
     }
@@ -823,7 +828,7 @@
       const helperLink = `admin.html?mode=report-photo-helper&reportId=${encodeURIComponent(item.id)}&reportDate=${encodeURIComponent(item.date)}&reportTitle=${encodeURIComponent(item.title)}&reportCategory=${encodeURIComponent(item.categoryLabel || '')}&reportPlace=${encodeURIComponent(item.place || '')}`;
       const imageSource = getReportImageSource(item.imageUrl);
       const imageMarkup = imageSource
-        ? `<img src="${escapeHtml(imageSource.src)}" data-fallbacks="${escapeHtml(imageSource.fallbacks.join('||'))}" alt="${escapeHtml(item.imageAlt || item.categoryLabel || item.title)}" loading="lazy" decoding="async" referrerpolicy="no-referrer">`
+        ? `<img src="${escapeHtml(imageSource.src)}" data-report-id="${escapeHtml(item.id)}" data-fallbacks="${escapeHtml(imageSource.fallbacks.join('||'))}" alt="${escapeHtml(item.imageAlt || item.categoryLabel || item.title)}" loading="lazy" decoding="async" referrerpolicy="no-referrer">`
         : (isAdminMode
           ? `<a class="report-card-img report-card-helper-link" href="${escapeHtml(helperLink)}" target="_blank" rel="noopener noreferrer">📸 写真をここに差し替え</a>`
           : '<div class="report-card-img" aria-hidden="true">写真準備中</div>');
@@ -841,20 +846,7 @@
     }).join('');
 
     reportGrid.querySelectorAll('img[data-fallbacks]').forEach((img) => {
-      img.addEventListener('error', () => {
-        const fallbacks = String(img.dataset.fallbacks || '')
-          .split('||')
-          .map((value) => value.trim())
-          .filter(Boolean);
-        const fallbackIndex = Number(img.dataset.fallbackIndex || '0');
-
-        if (fallbackIndex >= fallbacks.length) {
-          return;
-        }
-
-        img.dataset.fallbackIndex = String(fallbackIndex + 1);
-        img.src = fallbacks[fallbackIndex];
-      });
+      window.ReportPhotos.attach(img, reportPhotoApiUrl);
     });
   }
 
@@ -972,6 +964,7 @@
   async function loadPageData() {
     try {
       const config = await loadConfig();
+        reportPhotoApiUrl = config.reportSheetWebhookUrl || '';
       let events = [];
       let reports = [];
 
