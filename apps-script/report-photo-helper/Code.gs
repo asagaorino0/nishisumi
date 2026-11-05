@@ -518,6 +518,64 @@ function getDrivePhotoBlob_(value) {
   return blob;
 }
 
+function getDisplayPhotoData_(value) {
+  var fileId = extractDriveFileId_(value);
+  // 公開状態は呼び出し元で毎回確認済み。URL変更で別のキャッシュになる。
+  var cache;
+  var key = 'report-display-v1-' + fileId;
+  try {
+    cache = CacheService.getScriptCache();
+    var count = Number(cache.get(key + '-count'));
+    if (count > 0 && count <= 32) {
+      var parts = [];
+      for (var i = 0; i < count; i++) parts.push(cache.get(key + '-' + i));
+      if (parts.every(function (part) { return part !== null; })) return parts.join('');
+    }
+  } catch (error) {
+    // キャッシュ障害でも画像の配信を続行する。
+  }
+
+  var blob;
+  try {
+    var headers = { Authorization: 'Bearer ' + ScriptApp.getOAuthToken() };
+    var resourceKey = cleanString_(value).match(/[?&]resourcekey=([a-zA-Z0-9_-]+)/i);
+    if (resourceKey) headers['X-Goog-Drive-Resource-Keys'] = fileId + '/' + resourceKey[1];
+    var metadata = UrlFetchApp.fetch(
+      'https://www.googleapis.com/drive/v3/files/' + encodeURIComponent(fileId) + '?fields=thumbnailLink,mimeType&supportsAllDrives=true',
+      { headers: headers, muteHttpExceptions: true }
+    );
+    if (metadata.getResponseCode() === 200) {
+      var info = JSON.parse(metadata.getContentText());
+      // Googleが返す表示用URLにだけアクセスし、アクセストークンを外へ渡さない。
+      if (/^image\/(jpeg|png|webp)$/i.test(info.mimeType || '') && /^https:\/\/lh[0-9]+\.googleusercontent\.com\//.test(info.thumbnailLink || '')) {
+        var displayUrl = info.thumbnailLink.replace(/=s\d+$/, '=s1600');
+        var response = UrlFetchApp.fetch(displayUrl, { headers: headers, muteHttpExceptions: true });
+        if (response.getResponseCode() === 200) {
+          var candidate = response.getBlob();
+          if (/^image\/(jpeg|png|webp|gif)$/i.test(candidate.getContentType())) blob = candidate;
+        }
+      }
+    }
+  } catch (error) {
+    // プレビューが取得できないファイルは従来の取得方法に戻す。
+  }
+  if (!blob) blob = getDrivePhotoBlob_(value);
+  var bytes = blob.getBytes();
+  if (bytes.length > 8 * 1024 * 1024) throw new Error('写真の表示用データが大きすぎます。');
+  var dataUrl = 'data:' + blob.getContentType() + ';base64,' + Utilities.base64Encode(bytes);
+  // CacheServiceは1項目100KBまでのため、ASCIIデータを90KBずつ格納する。
+  if (cache && dataUrl.length <= 32 * 90000) {
+    try {
+      var values = {};
+      var chunks = Math.ceil(dataUrl.length / 90000);
+      for (var n = 0; n < chunks; n++) values[key + '-' + n] = dataUrl.slice(n * 90000, (n + 1) * 90000);
+      cache.putAll(values, 300);
+      cache.put(key + '-count', String(chunks), 300);
+    } catch (error) {}
+  }
+  return dataUrl;
+}
+
 function getPublicReportPhoto_(reportId) {
   // 任意のファイルIDを受け取らない。毎回シートで公開状態を確認する。
   var reports = getReportsPayload_(false);
@@ -525,10 +583,9 @@ function getPublicReportPhoto_(reportId) {
   if (!reportId || !report || !report.imageUrl) {
     throw new Error('公開対象の写真が見つかりません。');
   }
-  var blob = getDrivePhotoBlob_(report.imageUrl);
   return {
     ok: true,
-    dataUrl: 'data:' + blob.getContentType() + ';base64,' + Utilities.base64Encode(blob.getBytes())
+    dataUrl: getDisplayPhotoData_(report.imageUrl)
   };
 }
 
