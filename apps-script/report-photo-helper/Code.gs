@@ -67,6 +67,11 @@ function doPost(e) {
       throw new Error('更新内容が空です。');
     }
 
+    // ログイン済み管理者だけが見える写真を保存しない。シート更新前に検証する。
+    if (hasImageUpdate) {
+      assertPublicDriveImage_(driveShareUrl);
+    }
+
     const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
     if (!spreadsheet) {
       throw new Error('このスクリプトは活動報告スプレッドシートに紐づけて配置してください。');
@@ -477,6 +482,34 @@ function extractDriveFileId_(value) {
   }
 
   return '';
+}
+
+function assertPublicDriveImage_(value) {
+  var fileId = extractDriveFileId_(value);
+  if (!fileId) {
+    return;
+  }
+
+  var response;
+  try {
+    // DriveApp は実行者の権限で取得するため、公開可否の検証には使わない。
+    response = UrlFetchApp.fetch(buildThumbnailImageUrl_(fileId), {
+      followRedirects: true,
+      muteHttpExceptions: true
+    });
+  } catch (error) {
+    throw new Error('写真の公開確認に失敗しました。時間をおいて再送信してください。');
+  }
+  var headers = response.getHeaders();
+  var contentType = '';
+  Object.keys(headers).forEach(function (name) {
+    if (name.toLowerCase() === 'content-type') {
+      contentType = String(headers[name]);
+    }
+  });
+  if (response.getResponseCode() !== 200 || !/^image\//i.test(contentType)) {
+    throw new Error('写真をログインなしで取得できません。Drive の画像の「共有」で「一般的なアクセス」を「リンクを知っている全員（閲覧者）」に設定し、シークレットウィンドウで確認してください。組織の制限で公開できない場合は、公開用の画像保存先を利用してください。');
+  }
 }
 
 function buildThumbnailImageUrl_(fileId) {
