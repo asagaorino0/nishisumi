@@ -2,18 +2,20 @@
   'use strict';
   const requests = new Map();
 
-  function load(apiUrl, reportId, source) {
+  function load(apiUrl, reportId, source, preview) {
     const url = new URL(apiUrl);
     url.searchParams.set('resource', 'report-photo');
     url.searchParams.set('reportId', reportId);
+    if (preview) url.searchParams.set('preview', 'true');
+    else url.searchParams.delete('preview');
     // No includeHidden or fileId is sent; the server checks the public report.
     url.searchParams.delete('includeHidden');
     const key = url.href + '#' + source;
-    const storageKey = 'report-photo-v1:' + key;
+    const storageKey = 'report-photo-v2:' + key;
     try {
       const cached = JSON.parse(global.sessionStorage.getItem(storageKey) || 'null');
       if (cached && cached.expires > Date.now() && /^data:image\/(jpeg|png|webp|gif);base64,[A-Za-z0-9+/]+=*$/.test(cached.dataUrl)) {
-        return Promise.resolve(cached.dataUrl);
+        return Promise.resolve({ dataUrl: cached.dataUrl, preview: cached.preview });
       }
       global.sessionStorage.removeItem(storageKey);
     } catch (error) {}
@@ -29,9 +31,9 @@
             throw new Error('Photo API did not return an image');
           }
           try {
-            if (payload.dataUrl.length <= 1500000) global.sessionStorage.setItem(storageKey, JSON.stringify({ expires: Date.now() + 300000, dataUrl: payload.dataUrl }));
+            if (payload.dataUrl.length <= 4800000) global.sessionStorage.setItem(storageKey, JSON.stringify({ expires: Date.now() + 300000, dataUrl: payload.dataUrl, preview: Boolean(payload.preview) }));
           } catch (error) {}
-          return payload.dataUrl;
+          return { dataUrl: payload.dataUrl, preview: Boolean(payload.preview) };
         } finally {
           clearTimeout(timer);
         }
@@ -57,10 +59,22 @@
     if (!candidates.length || !apiUrl || !img.dataset.reportId) return;
     pending = true;
     try {
-      const dataUrl = await load(apiUrl, img.dataset.reportId, img.src);
+      const source = img.src;
+      const photo = await load(apiUrl, img.dataset.reportId, source, true);
       if (img.isConnected === false) return;
       pending = false;
-      img.src = dataUrl;
+      img.src = photo.dataUrl;
+      if (photo.preview) {
+        // プレビューを実際に描画してから高画質版を取得する。
+        if (global.requestAnimationFrame) await new Promise(resolve => global.requestAnimationFrame(() => global.requestAnimationFrame(resolve)));
+        try {
+          const full = await load(apiUrl, img.dataset.reportId, source, false);
+          if (img.isConnected !== false) img.src = full.dataUrl;
+        } catch (error) {
+          // 高画質版が失敗しても表示済みプレビューを保持する。
+          console.warn('高画質の写真取得に失敗しました。プレビューを表示します。', error);
+        }
+      }
     } catch (error) {
       pending = false;
       console.warn('活動報告の写真取得に失敗しました。Apps Scriptの反映と実行者のDrive閲覧権限を確認してください。', error);

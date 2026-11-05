@@ -12,7 +12,7 @@ function doGet(e) {
     var includeHidden = cleanString_(params.includeHidden).toLowerCase() === 'true';
 
     if (resource === 'report-photo') {
-      return jsonResponse_(getPublicReportPhoto_(cleanString_(params.reportId)));
+      return jsonResponse_(getPublicReportPhoto_(cleanString_(params.reportId), cleanString_(params.preview) === 'true'));
     }
 
     if (resource === 'reports') {
@@ -518,25 +518,41 @@ function getDrivePhotoBlob_(value) {
   return blob;
 }
 
-function getDisplayPhotoData_(value) {
+function getDisplayPhotoData_(value, preview, delivery) {
   var fileId = extractDriveFileId_(value);
   // 公開状態は呼び出し元で毎回確認済み。URL変更で別のキャッシュになる。
   var cache;
-  var key = 'report-display-v1-' + fileId;
+  var key = 'report-display-v2-' + (preview ? 'preview-' : 'full-') + fileId;
   try {
     cache = CacheService.getScriptCache();
     var count = Number(cache.get(key + '-count'));
-    if (count > 0 && count <= 32) {
-      var parts = [];
-      for (var i = 0; i < count; i++) parts.push(cache.get(key + '-' + i));
-      if (parts.every(function (part) { return part !== null; })) return parts.join('');
+    if (count > 0 && count <= 128) {
+      var keys = [];
+      for (var i = 0; i < count; i++) keys.push(key + '-' + i);
+      var entries = cache.getAll(keys);
+      var parts = keys.map(function (partKey) { return entries[partKey] || null; });
+      if (parts.every(function (part) { return part !== null; })) {
+        if (delivery) delivery.preview = Boolean(preview);
+        return parts.join('');
+      }
     }
   } catch (error) {
     // キャッシュ障害でも画像の配信を続行する。
   }
 
   var blob;
-  try {
+  if (preview) {
+    try {
+      var resourceKeyMatch = cleanString_(value).match(/[?&]resourcekey=([a-zA-Z0-9_-]+)/i);
+      var previewFile = resourceKeyMatch
+        ? DriveApp.getFileByIdAndResourceKey(fileId, resourceKeyMatch[1])
+        : DriveApp.getFileById(fileId);
+      if (/^image\/(jpeg|png|webp)$/i.test(previewFile.getMimeType())) {
+        blob = previewFile.getThumbnail();
+      }
+    } catch (error) {}
+    if (!blob) return getDisplayPhotoData_(value, false, delivery);
+  } else try {
     var headers = { Authorization: 'Bearer ' + ScriptApp.getOAuthToken() };
     var resourceKey = cleanString_(value).match(/[?&]resourcekey=([a-zA-Z0-9_-]+)/i);
     if (resourceKey) headers['X-Goog-Drive-Resource-Keys'] = fileId + '/' + resourceKey[1];
@@ -563,8 +579,9 @@ function getDisplayPhotoData_(value) {
   var bytes = blob.getBytes();
   if (bytes.length > 8 * 1024 * 1024) throw new Error('写真の表示用データが大きすぎます。');
   var dataUrl = 'data:' + blob.getContentType() + ';base64,' + Utilities.base64Encode(bytes);
+  if (delivery) delivery.preview = Boolean(preview);
   // CacheServiceは1項目100KBまでのため、ASCIIデータを90KBずつ格納する。
-  if (cache && dataUrl.length <= 32 * 90000) {
+  if (cache && dataUrl.length <= 128 * 90000) {
     try {
       var values = {};
       var chunks = Math.ceil(dataUrl.length / 90000);
@@ -576,16 +593,19 @@ function getDisplayPhotoData_(value) {
   return dataUrl;
 }
 
-function getPublicReportPhoto_(reportId) {
+function getPublicReportPhoto_(reportId, preview) {
   // 任意のファイルIDを受け取らない。毎回シートで公開状態を確認する。
   var reports = getReportsPayload_(false);
   var report = reports.filter(function (item) { return item.id === reportId; })[0];
   if (!reportId || !report || !report.imageUrl) {
     throw new Error('公開対象の写真が見つかりません。');
   }
+  var delivery = { preview: false };
+  var dataUrl = getDisplayPhotoData_(report.imageUrl, preview, delivery);
   return {
     ok: true,
-    dataUrl: getDisplayPhotoData_(report.imageUrl)
+    preview: delivery.preview,
+    dataUrl: dataUrl
   };
 }
 
